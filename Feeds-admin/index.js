@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser';
 // importing internal packages
 import { ErrorHandler } from './middlewares/Errorhandler.js';
 import { home } from './routes/home.js';
+import { user } from './routes/userlist.js';
 import { connectDB } from './DB/Connection.js';
 import auth from './routes/auth.js';
 
@@ -40,6 +41,7 @@ app.get("/healthCheck", (req, res) => {
 // router level middleware
 app.use("/home", home);
 app.use("/auth", auth);
+app.use("/user", user);
 
 // Error handler middleware
 app.use(ErrorHandler);

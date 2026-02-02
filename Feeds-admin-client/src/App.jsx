@@ -3,6 +3,7 @@ import Dashboard from "./components/dashboard.jsx";
 import AdminLoginPage from "./components/login.jsx";
 import ProtectedRoute from "./Routes/PrivateRoute.jsx";
 import PublicRoute from "./Routes/PublicRoute.jsx";
+import UsersPage from "./components/UserList.jsx";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
           <Route path="/login" element={<AdminLoginPage />} />
         </Route>
         <Route element={<ProtectedRoute />}>
+          <Route path="/userList" element={<UsersPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>
       </Routes>

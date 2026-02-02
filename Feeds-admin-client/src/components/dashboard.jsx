@@ -6,14 +6,16 @@ import {
   ShoppingCart,
   Monitor,
   LogOut,
-  Settings,
 } from "lucide-react";
 import "../styles/dashboard.css";
 import { useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const { setIsAuthenticated } = useContext(AuthContext);
 
   const ordersData = [
     { day: "Mon", value: 60 },
@@ -31,6 +33,7 @@ export default function Dashboard() {
   const fetchUsers = async () => {
     const res = await fetch("http://localhost:8080/home/getUsers", {
       method: "GET",
+      credentials: 'include',
       headers: {
         "Content-Type": "application/json",
       },
@@ -46,6 +49,7 @@ export default function Dashboard() {
   const fetchChannels = async () => {
     const res = await fetch("http://localhost:8080/home/getChannels", {
       method: "GET",
+      credentials: 'include',
       headers: {
         "Content-Type": "application/json",
       },
@@ -68,7 +72,8 @@ export default function Dashboard() {
     });
     const data = await res.json();
     if (data.success){
-      navigate("/login")
+      setIsAuthenticated(false)
+      navigate("/login", { replace: true });
     }
   }
 
@@ -89,6 +94,10 @@ export default function Dashboard() {
           <a href="#" className="nav-item active">
             <BarChart3 size={18} />
             <span>Overview</span>
+          </a>
+          <a href="/userList" className="nav-item">
+            <BarChart3 size={18} />
+            <span>All Users</span>
           </a>
           <a href="#" className="nav-item">
             <div className="nav-badge-relative">
@@ -241,7 +250,7 @@ export default function Dashboard() {
               <div className="team-section">
                 <div className="section-header">
                   <h3 className="section-title">Team members</h3>
-                  <button className="button-cyan">See all</button>
+                  <button className="button-cyan" onClick={() => navigate("/userList")}>See all</button>
                 </div>
                 <div className="team-list">
                   {users.map((member, index) => (

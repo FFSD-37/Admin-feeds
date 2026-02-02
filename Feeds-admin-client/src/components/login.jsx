@@ -1,32 +1,33 @@
 import React, { use, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
+import { useContext } from "react";
 
 const AdminLoginPage = () => {
-
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState(null);
+  const { setIsAuthenticated } = useContext(AuthContext);
 
   const handleLogin = async (event) => {
     event.preventDefault();
     setMessage(null);
-
     const res = await fetch("http://localhost:8080/auth/login", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
     });
-    setPassword("");
-    setUsername("");
     const data = await res.json();
-
     setMessage({
       text: data.msg,
       success: data.success,
     });
-    navigate("/dashboard");
+    if (data.success) {
+      setIsAuthenticated(true);
+      navigate("/dashboard", { replace: true });
+    }
   };
 
   return (
