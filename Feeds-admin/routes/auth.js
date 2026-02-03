@@ -23,7 +23,7 @@ auth.post("/login", async (req, res) => {
                 });
             }
             const token = jwt.sign(
-                { id: user._id, username: user.username },
+                { id: user._id},
                 process.env.JWT_SECRET,
                 { expiresIn: '1d' }
             );
@@ -52,26 +52,40 @@ auth.post("/login", async (req, res) => {
     }
 });
 
-auth.get("/status", (req, res) => {
-  const token = req.cookies.auth_token;
+auth.get("/status", async (req, res) => {
+    const token = req.cookies.auth_token;
 
-  if (!token) {
-    return res.status(401).json({ isAuthenticated: false });
-  }
+    if (!token) {
+        return res.status(401).json({
+            isAuthenticated: false,
+        });
+    }
 
-  try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "change_this_secret"
-    );
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    return res.status(200).json({
-      isAuthenticated: true,
-      user: decoded
-    });
-  } catch {
-    return res.status(401).json({ isAuthenticated: false });
-  }
+        const user = await Admin.findById(decoded.id).select("-password");
+
+        if (!user) {
+            return res.status(401).json({
+                isAuthenticated: false,
+            });
+        }
+
+        return res.status(200).json({
+            isAuthenticated: true,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: "admin",
+            },
+        });
+    } catch (err) {
+        return res.status(401).json({
+            isAuthenticated: false,
+        });
+    }
 });
 
 auth.post("/logout", (req, res) => {

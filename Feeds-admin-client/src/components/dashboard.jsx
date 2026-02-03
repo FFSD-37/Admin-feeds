@@ -4,18 +4,17 @@ import {
   Book,
   BarChart3,
   ShoppingCart,
-  Monitor,
-  LogOut,
 } from "lucide-react";
 import "../styles/dashboard.css";
 import { useNavigate } from "react-router-dom";
 import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../context/AuthContext.jsx";
+import Sidebar from "./Sidebar.jsx"
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const { setIsAuthenticated } = useContext(AuthContext);
+  const { setIsAuthenticated, user } = useContext(AuthContext);
 
   const ordersData = [
     { day: "Mon", value: 60 },
@@ -26,9 +25,10 @@ export default function Dashboard() {
     { day: "Sat", value: 65 },
     { day: "Sun", value: 70 },
   ];
-
   const [users, setUsers] = useState([]);
   const [channels, setChannel] = useState([]);
+  const [revenue, setRevenue] = useState(0);
+  const [userCount, setUserCount] = useState(0);
 
   const fetchUsers = async () => {
     const res = await fetch("http://localhost:8080/home/getUsers", {
@@ -62,69 +62,46 @@ export default function Dashboard() {
     }
   };
 
-  const logout = async () => {
-    const res = await fetch("http://localhost:8080/auth/logout", {
-      method: "POST",
-      credentials: "include",
+  const fetchRevenue = async () => {
+    const res = await fetch("http://localhost:8080/home/getRevenue", {
+      method: "GET",
+      credentials: 'include',
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
     });
     const data = await res.json();
-    if (data.success){
-      setIsAuthenticated(false)
-      navigate("/login", { replace: true });
+    if (data.success) {
+      setRevenue(data.rev);
+    } else {
+      alert("Error fetching users");
+    }
+  }
+
+  const fetchUserCount = async () => {
+    const res = await fetch("http://localhost:8080/home/getUserCount", {
+      method: "GET",
+      credentials: 'include',
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await res.json();
+    if (data.success) {
+      setUserCount(data.count);
+    } else {
+      alert("Error fetching users");
     }
   }
 
   useEffect(() => {
-    Promise.all([fetchUsers(), fetchChannels()]).finally(() => setLoading(false));
+    Promise.all([fetchUsers(), fetchChannels(), fetchRevenue(), fetchUserCount()]).finally(() => setLoading(false));
   }, []);
 
   return (
     <div className="dashboard-container">
       {/* Sidebar */}
-      <div className="sidebar">
-        <div className="sidebar-header">
-          <div className="sidebar-logo">⚡</div>
-          <span className="sidebar-title">Feeds</span>
-        </div>
-
-        <nav className="sidebar-nav">
-          <a href="#" className="nav-item active">
-            <BarChart3 size={18} />
-            <span>Overview</span>
-          </a>
-          <a href="/userList" className="nav-item">
-            <BarChart3 size={18} />
-            <span>All Users</span>
-          </a>
-          <a href="#" className="nav-item">
-            <div className="nav-badge-relative">
-              <Book size={18} />
-            </div>
-            <span>Tickets</span>
-          </a>
-          <a href="#" className="nav-item">
-            <ShoppingCart size={18} />
-            <span>Transactions</span>
-          </a>
-          <a href="#" className="nav-item">
-            <Book size={18} />
-            <span>Feedbacks</span>
-          </a>
-          <a href="#" className="nav-item">
-            <Monitor size={18} />
-            <span>Settings</span>
-          </a>
-        </nav>
-        <div className="sidebar-footer">
-          <button className="upgrade-button" onClick={logout}>
-            <LogOut size={18} />
-            Logout
-          </button>
-        </div>
-      </div>
+      <Sidebar />
 
       {/* Main Content */}
       <div className="main-content">
@@ -157,7 +134,7 @@ export default function Dashboard() {
                 alt="User"
                 className="user-avatar"
               />
-              <span className="user-name">Admin</span>
+              <span className="user-name">{user.username}</span>
             </div>
           </div>
         </div>
@@ -182,8 +159,8 @@ export default function Dashboard() {
             <div className="stat-card">
               <div className="stat-content">
                 <div className="stat-info">
-                  <h3 className="stat-title">Users</h3>
-                  <div className="stat-value">345k</div>
+                  <h3 className="stat-title">Community Size</h3>
+                  <div className="stat-value">{userCount}</div>
                 </div>
                 <div className="stat-icon">
                   <BarChart3 size={24} />
@@ -196,7 +173,7 @@ export default function Dashboard() {
               <div className="stat-content">
                 <div className="stat-info">
                   <h3 className="stat-title">Revenue</h3>
-                  <div className="stat-value">$43,594</div>
+                  <div className="stat-value">₹{revenue}</div>
                 </div>
                 <div className="stat-icon">
                   <ShoppingCart size={24} />
@@ -311,28 +288,27 @@ export default function Dashboard() {
               <div className="team-section">
                 <div className="section-header">
                   <h3 className="section-title">Channels</h3>
-                  <button className="button-cyan">See all</button>
+                  <button className="button-cyan" onClick={() => navigate("/channeList")}>See all</button>
                 </div>
                 <div className="team-list">
-                  {users.map((member, index) => (
+                  {channels.map((member, index) => (
                     <div
                       key={index}
                       className="team-member"
                       style={{
-                        backgroundColor:
-                          member.type === "Kids" ? "lightpink" : "lightblue",
+                        border: "1px solid black"
                       }}
                     >
-                      <div className="member-info">
+                      <div className="member-info" >
                         <img
-                          src={member.profilePicture}
-                          alt={member.username}
+                          src={member.channelLogo}
+                          alt={member.channelName}
                           className="member-avatar"
                         />
                         <div>
-                          <div className="member-name">{member.username}</div>
+                          <div className="member-name">{member.channelName}</div>
                           <div className="member-status">
-                            {member.isPremium ? "Premium" : "Non-premium"}
+                            {member.channelDescription}
                           </div>
                         </div>
                       </div>

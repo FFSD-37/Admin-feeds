@@ -9,7 +9,12 @@ import cookieParser from 'cookie-parser';
 import { ErrorHandler } from './middlewares/Errorhandler.js';
 import { home } from './routes/home.js';
 import { user } from './routes/userlist.js';
+import { feedback } from './routes/feedbacks.js';
+import { reports } from './routes/reports.js';
+import { payment } from './routes/payments.js';
+import { channel } from './routes/channels.js';
 import { connectDB } from './DB/Connection.js';
+import { setting } from './routes/settings.js';
 import auth from './routes/auth.js';
 
 // configuration
@@ -42,6 +47,11 @@ app.get("/healthCheck", (req, res) => {
 app.use("/home", home);
 app.use("/auth", auth);
 app.use("/user", user);
+app.use("/feedback", feedback);
+app.use("/report", reports);
+app.use("/payment", payment);
+app.use("/channel", channel);
+app.use("/setting", setting);
 
 // Error handler middleware
 app.use(ErrorHandler);
