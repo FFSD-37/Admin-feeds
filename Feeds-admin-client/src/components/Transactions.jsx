@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  DollarSign,
+  BadgeIndianRupee,
   User,
   Calendar,
   CreditCard,
@@ -204,7 +204,7 @@ const PaymentsPage = () => {
           <div className="summaryGrid">
             <div className="summaryCard">
               <div className="summaryIcon">
-                <DollarSign size={24} color="#10b981" />
+                <BadgeIndianRupee size={24} color="#10b981" />
               </div>
               <div>
                 <div className="summaryLabel">Total Transactions</div>
@@ -290,7 +290,7 @@ const PaymentsPage = () => {
             </div>
           ) : filteredPayments.length === 0 ? (
             <div className="emptyState">
-              <DollarSign size={48} color="#9ca3af" />
+              <BadgeIndianRupee size={48} color="#9ca3af" />
               <p className="emptyText">No payments found</p>
             </div>
           ) : (
@@ -330,7 +330,7 @@ const PaymentsPage = () => {
 
                     <div className="cardBody">
                       <div className="amountSection">
-                        <DollarSign size={20} color="#10b981" />
+                        <BadgeIndianRupee size={20} color="#10b981" />
                         <span className="amount">
                           {formatAmount(payment.amount)}
                         </span>

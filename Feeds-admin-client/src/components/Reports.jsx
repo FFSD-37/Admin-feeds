@@ -65,7 +65,7 @@ const ReportsPage = () => {
 
   const handleStatusChange = async (reportId, newStatus) => {
     try {
-      const res = await fetch(`http://localhost:8080/home/updateReportStatus`, {
+      const res = await fetch(`http://localhost:8080/report/updateReportStatus`, {
         method: "POST",
         credentials: "include",
         headers: {

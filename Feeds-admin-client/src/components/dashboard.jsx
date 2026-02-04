@@ -288,7 +288,7 @@ export default function Dashboard() {
               <div className="team-section">
                 <div className="section-header">
                   <h3 className="section-title">Channels</h3>
-                  <button className="button-cyan" onClick={() => navigate("/channeList")}>See all</button>
+                  <button className="button-cyan" onClick={() => navigate("/channelList")}>See all</button>
                 </div>
                 <div className="team-list">
                   {channels.map((member, index) => (
