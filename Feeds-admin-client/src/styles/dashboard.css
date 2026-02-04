@@ -724,6 +724,7 @@
   background-color: #22d3ee;
   border-radius: 0.125rem;
   width: 100%;
+  cursor: pointer;
 }
 
 .bar-label {

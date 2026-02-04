@@ -1,39 +1,78 @@
-import React, { useEffect, useState } from "react";
-import {
-  Map,
-  Book,
-  BarChart3,
-  ShoppingCart,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Map, Book, BarChart3, ShoppingCart, TrendingUp } from "lucide-react";
 import "../styles/dashboard.css";
 import { useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext.jsx";
-import Sidebar from "./Sidebar.jsx"
+import Sidebar from "./Sidebar.jsx";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const { setIsAuthenticated, user } = useContext(AuthContext);
-
-  const ordersData = [
-    { day: "Mon", value: 60 },
-    { day: "Tue", value: 75 },
-    { day: "Wed", value: 70 },
-    { day: "Thu", value: 85 },
-    { day: "Fri", value: 80 },
-    { day: "Sat", value: 65 },
-    { day: "Sun", value: 70 },
-  ];
+  const { user } = useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [channels, setChannel] = useState([]);
   const [revenue, setRevenue] = useState(0);
   const [userCount, setUserCount] = useState(0);
+  const [reach, setReach] = useState(0);
+  const [ordersData, setOrdersData] = useState([]);
+  const [reportData, setReportData] = useState([]);
+  const [contentActivity, setContentActivity] = useState([]);
+  const MAX_BAR_HEIGHT = 100;
+
+  const fetchContentActivity = async () => {
+    const res = await fetch("http://localhost:8080/home/contentActivityToday", {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await res.json();
+    if (data.success) {
+      setContentActivity(data.data);
+    } else {
+      alert("Error fetching reach");
+    }
+  }
+
+  const fetchReportData = async () => {
+    const res = await fetch("http://localhost:8080/home/reportData", {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await res.json();
+    if (data.success) {
+      setReportData(data.data);
+    } else {
+      alert("Error fetching reach");
+    }
+  };
+
+  const fetchReach = async () => {
+    const res = await fetch("http://localhost:8080/home/getReach", {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const data = await res.json();
+    if (data.success) {
+      setOrdersData(data.data);
+      setReach(data.count);
+    } else {
+      alert("Error fetching reach");
+    }
+  };
 
   const fetchUsers = async () => {
     const res = await fetch("http://localhost:8080/home/getUsers", {
       method: "GET",
-      credentials: 'include',
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -49,7 +88,7 @@ export default function Dashboard() {
   const fetchChannels = async () => {
     const res = await fetch("http://localhost:8080/home/getChannels", {
       method: "GET",
-      credentials: 'include',
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -65,7 +104,7 @@ export default function Dashboard() {
   const fetchRevenue = async () => {
     const res = await fetch("http://localhost:8080/home/getRevenue", {
       method: "GET",
-      credentials: 'include',
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -76,12 +115,12 @@ export default function Dashboard() {
     } else {
       alert("Error fetching users");
     }
-  }
+  };
 
   const fetchUserCount = async () => {
     const res = await fetch("http://localhost:8080/home/getUserCount", {
       method: "GET",
-      credentials: 'include',
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -92,31 +131,36 @@ export default function Dashboard() {
     } else {
       alert("Error fetching users");
     }
-  }
+  };
 
   useEffect(() => {
-    Promise.all([fetchUsers(), fetchChannels(), fetchRevenue(), fetchUserCount()]).finally(() => setLoading(false));
+    Promise.all([
+      fetchUsers(),
+      fetchChannels(),
+      fetchRevenue(),
+      fetchUserCount(),
+      fetchReach(),
+      fetchReportData(),
+      fetchContentActivity(),
+    ]).finally(() => setLoading(false));
   }, []);
+
+  const maxCount = Math.max(...ordersData.map((item) => item.count), 1);
 
   return (
     <div className="dashboard-container">
-      {/* Sidebar */}
       <Sidebar />
-
-      {/* Main Content */}
       <div className="main-content">
         {loading && (
           <div className="loader-overlay" role="status" aria-live="polite">
             <div className="loader-panel">
               <div className="spinner" aria-hidden="true" />
               <div className="loader-text">Loading dashboard…</div>
-
               <div className="skeleton-grid" aria-hidden="true">
                 <div className="skeleton-card skeleton-anim" />
                 <div className="skeleton-card skeleton-anim" />
                 <div className="skeleton-card skeleton-anim" />
               </div>
-
               <div className="skeleton-list" aria-hidden="true">
                 <div className="skeleton-list-item skeleton-anim" />
                 <div className="skeleton-list-item skeleton-anim" />
@@ -125,7 +169,6 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-        {/* Header */}
         <div className="header">
           <div className="header-right">
             <div className="user-info">
@@ -138,24 +181,8 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-
-        {/* Dashboard Content */}
         <div className="content-area">
-          {/* Action Buttons */}
-          <div className="action-buttons">
-            <div className="button-group-right">
-              <button className="button-secondary">Share insights</button>
-              <button
-                className="button-secondary"
-                style={{ marginLeft: "0.75rem" }}
-              >
-                Export Data
-              </button>
-            </div>
-          </div>
-          {/* Stats Cards */}
           <div className="stats-grid">
-            {/* Customers */}
             <div className="stat-card">
               <div className="stat-content">
                 <div className="stat-info">
@@ -167,8 +194,6 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-
-            {/* Revenue */}
             <div className="stat-card">
               <div className="stat-content">
                 <div className="stat-info">
@@ -181,63 +206,24 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
-          {/* Bottom Section */}
           <div className="bottom-grid">
-            {/* Page Visits */}
             <div className="page-visits-card">
-              {/* <div className="card-header">
-                <h3 className="card-title">Page visits</h3>
-                <button className="see-all-button">See all</button>
-              </div>
-              <div className="table-container">
-                <table className="data-table">
-                  <thead className="table-header">
-                    <tr>
-                      <th>Page Name</th>
-                      <th>Page Views</th>
-                      <th>Page Value</th>
-                      <th>Bounce Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody className="table-body">
-                    {pageVisits.map((page, index) => (
-                      <tr key={index}>
-                        <td>{page.name}</td>
-                        <td>{page.views.toLocaleString()}</td>
-                        <td>{page.value}</td>
-                        <td>
-                          <span
-                            className={
-                              page.trend === "up"
-                                ? "bounce-rate-up"
-                                : "bounce-rate-down"
-                            }
-                          >
-                            {page.trend === "up" ? "▲" : "▼"} {page.bounce}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div> */}
-
-              {/* Team Members Section */}
               <div className="team-section">
                 <div className="section-header">
                   <h3 className="section-title">Team members</h3>
-                  <button className="button-cyan" onClick={() => navigate("/userList")}>See all</button>
+                  <button
+                    className="button-cyan"
+                    onClick={() => navigate("/userList")}
+                  >
+                    See all
+                  </button>
                 </div>
                 <div className="team-list">
                   {users.map((member, index) => (
                     <div
                       key={index}
                       className="team-member"
-                      style={{
-                        backgroundColor:
-                          member.type === "Kids" ? "lightpink" : "lightblue",
-                      }}
+                      style={{ border: "1px solid black" }}
                     >
                       <div className="member-info">
                         <img
@@ -252,43 +238,20 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </div>
-                      <button className="member-action">Manage</button>
+                      <button className="member-action" onClick={() => navigate("/userList")}>Manage</button>
                     </div>
                   ))}
                 </div>
               </div>
-
-              {/* Progress Track */}
-              {/* <div className="progress-section">
-                <h3 className="section-title">Progress track</h3>
-                <div className="progress-list">
-                  {progressItems.map((item, index) => (
-                    <div key={index} className="progress-item">
-                      <div className={`progress-icon ${item.colorClass}`}>
-                        {item.icon}
-                      </div>
-                      <div className="progress-content">
-                        <div className="progress-header">
-                          <span className="progress-name">{item.name}</span>
-                          <span className="progress-percentage">
-                            {item.progress}%
-                          </span>
-                        </div>
-                        <div className="progress-bar-container">
-                          <div
-                            className="progress-bar-fill"
-                            style={{ width: `${item.progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div> */}
               <div className="team-section">
                 <div className="section-header">
                   <h3 className="section-title">Channels</h3>
-                  <button className="button-cyan" onClick={() => navigate("/channelList")}>See all</button>
+                  <button
+                    className="button-cyan"
+                    onClick={() => navigate("/channelList")}
+                  >
+                    See all
+                  </button>
                 </div>
                 <div className="team-list">
                   {channels.map((member, index) => (
@@ -296,70 +259,64 @@ export default function Dashboard() {
                       key={index}
                       className="team-member"
                       style={{
-                        border: "1px solid black"
+                        border: "1px solid black",
                       }}
                     >
-                      <div className="member-info" >
+                      <div className="member-info">
                         <img
                           src={member.channelLogo}
                           alt={member.channelName}
                           className="member-avatar"
                         />
                         <div>
-                          <div className="member-name">{member.channelName}</div>
+                          <div className="member-name">
+                            {member.channelName}
+                          </div>
                           <div className="member-status">
                             {member.channelDescription}
                           </div>
                         </div>
                       </div>
-                      <button className="member-action">Manage</button>
+                      <button className="member-action" onClick={() => navigate("/channelList")}>Manage</button>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-
-            {/* Right Column */}
             <div className="right-column">
-              {/* Total Orders */}
               <div className="orders-card">
-                <h3 className="stat-title">Total orders</h3>
-                <div className="stat-value">452</div>
-                <div className="stat-change" style={{ marginBottom: "1rem" }}>
-                  ▲ 18.2%
+                <h3 className="stat-title">Total Users Activity</h3>
+                <div
+                  className="stat-value"
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  {reach}
+                  <TrendingUp size={20} color="#10b981" />
                 </div>
-
-                <div className="orders-legend">
-                  <span className="legend-dot legend-dot-dark"></span>
-                  <span className="legend-label">July</span>
-                  <span
-                    className="legend-dot legend-dot-cyan"
-                    style={{ marginLeft: "1rem" }}
-                  ></span>
-                  <span className="legend-label">August</span>
-                </div>
-
-                {/* Bar Chart */}
                 <div className="bar-chart">
-                  {ordersData.map((item, index) => (
-                    <div key={index} className="bar-column">
-                      <div className="bar-stack">
-                        <div
-                          className="bar-dark"
-                          style={{ height: `${item.value * 0.6}px` }}
-                        ></div>
-                        <div
-                          className="bar-cyan"
-                          style={{ height: `${item.value * 0.8}px` }}
-                        ></div>
+                  {ordersData.map((item, index) => {
+                    const monthLabel = new Date(
+                      item._id.year,
+                      item._id.month - 1,
+                    ).toLocaleString("default", { month: "short" });
+                    const normalizedHeight =
+                      (item.count / maxCount) * MAX_BAR_HEIGHT;
+                    return (
+                      <div key={index} className="bar-column">
+                        <div className="bar-stack">
+                          <div
+                            className="bar-cyan"
+                            style={{ height: `${normalizedHeight}px` }}
+                          ></div>
+                        </div>
+                        <span className="bar-label">
+                          {monthLabel} {item._id.year}
+                        </span>
                       </div>
-                      <span className="bar-label">{item.day}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
-
-              {/* Rankings */}
               <div className="rankings-card">
                 <div className="rank-item">
                   <div className="rank-info-container">
@@ -367,73 +324,89 @@ export default function Dashboard() {
                       <BarChart3 size={16} />
                     </div>
                     <div>
-                      <div className="rank-title">Global Rank</div>
+                      <div className="rank-title">Total Reports</div>
+                      <div className="rank-subtitle">All time</div>
                     </div>
                   </div>
                   <div className="rank-value-container">
-                    <span className="rank-value">#755</span>
-                    <span className="rank-arrow">↗</span>
+                    <span className="rank-value">{reportData.total}</span>
                   </div>
                 </div>
-
                 <div className="rank-item">
                   <div className="rank-info-container">
                     <div className="rank-icon-container">
                       <Map size={16} />
                     </div>
                     <div>
-                      <div className="rank-title">Country Rank</div>
-                      <div className="rank-subtitle">United States ▲</div>
+                      <div className="rank-title">Pending Reports</div>
+                      <div className="rank-subtitle">Needs attention</div>
                     </div>
                   </div>
                   <div className="rank-value-container">
-                    <span className="rank-value">#32</span>
-                    <span className="rank-arrow">↗</span>
+                    <span className="rank-value">{reportData.pending}</span>
                   </div>
                 </div>
-
                 <div className="rank-item">
                   <div className="rank-info-container">
                     <div className="rank-icon-container">
                       <Book size={16} />
                     </div>
                     <div>
-                      <div className="rank-title">Category Rank</div>
-                      <div className="rank-subtitle">Travel Accomodation</div>
+                      <div className="rank-title">Resolved Today</div>
+                      <div className="rank-subtitle">Last 24 hours</div>
                     </div>
                   </div>
                   <div className="rank-value-container">
-                    <span className="rank-value">#16</span>
-                    <span className="rank-arrow">↗</span>
+                    <span className="rank-value">
+                      {reportData.resolvedToday}
+                    </span>
+                    <span className="rank-arrow">✓</span>
                   </div>
                 </div>
+                <div className="section-header">
+                  <button
+                    className="button-cyan"
+                    onClick={() => navigate("/reports")}
+                  >
+                    See all Reports
+                  </button>
+                </div>
               </div>
-
-              {/* Acquisition */}
               <div className="acquisition-card">
-                <h3 className="section-title">Acquisition</h3>
+                <h3 className="section-title">Content Activity (Today)</h3>
                 <p className="acquisition-description">
-                  Tells you where your visitors originated from, such as search
-                  engines, social networks or website referrals.
+                  Shows how much content was created on the platform today.
                 </p>
-
                 <div className="acquisition-stats">
                   <div>
                     <div className="acquisition-stat">
                       <BarChart3 size={16} />
-                      <span className="acquisition-stat-label">
-                        Bounce Rate
-                      </span>
+                      <span className="acquisition-stat-label">Posts</span>
                     </div>
-                    <div className="acquisition-stat-value">33.50%</div>
+                    <div className="acquisition-stat-value" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      {contentActivity.postsToday}
+                      <TrendingUp size={20} color="#10b981" />
+                    </div>
                   </div>
-
                   <div>
                     <div className="acquisition-stat">
                       <BarChart3 size={16} />
-                      <span className="acquisition-stat-label">Sessions</span>
+                      <span className="acquisition-stat-label">Reels</span>
                     </div>
-                    <div className="acquisition-stat-value">9,567</div>
+                    <div className="acquisition-stat-value" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      {contentActivity.reelsToday}
+                      <TrendingUp size={20} color="#10b981" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="acquisition-stat">
+                      <BarChart3 size={16} />
+                      <span className="acquisition-stat-label">Stories</span>
+                    </div>
+                    <div className="acquisition-stat-value" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      {contentActivity.storiesToday}
+                      <TrendingUp size={20} color="#10b981" />
+                    </div>
                   </div>
                 </div>
               </div>

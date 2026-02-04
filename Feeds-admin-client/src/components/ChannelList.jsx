@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Users,
   FileText,
@@ -7,16 +7,18 @@ import {
   Edit,
   Trash2,
   Archive,
-  Eye,
 } from "lucide-react";
 import "../styles/channelList.css";
 import Sidebar from "./Sidebar";
+import { AuthContext } from "../context/AuthContext";
+import { useContext } from "react";
 
 const ChannelsPage = () => {
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [showMenu, setShowMenu] = useState(null);
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchChannels = async () => {
@@ -87,7 +89,7 @@ const ChannelsPage = () => {
                 alt="User"
                 className="user-avatar"
               />
-              <span className="user-name">Admin</span>
+              <span className="user-name">{user.username}</span>
             </div>
           </div>
         </div>

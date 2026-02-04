@@ -29,7 +29,7 @@ const UsersPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showMenu, setShowMenu] = useState(null);
   const [filterType, setFilterType] = useState('all');
-  const { setIsAuthenticated } = useContext(AuthContext);
+  const { setIsAuthenticated, user } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -121,7 +121,7 @@ const UsersPage = () => {
                 alt="User"
                 className="user-avatar"
               />
-              <span className="user-name">Admin</span>
+              <span className="user-name">{user.username}</span>
             </div>
           </div>
         </div>

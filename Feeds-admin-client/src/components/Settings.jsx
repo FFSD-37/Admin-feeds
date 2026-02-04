@@ -275,178 +275,10 @@ const SettingsPage = () => {
     </div>
   );
 
-  const renderNotificationSettings = () => (
-    <div style={styles.section}>
-      <h3 style={styles.sectionTitle}>Notification Preferences</h3>
-      <div style={styles.form}>
-        <div style={styles.toggleGroup}>
-          <div>
-            <div style={styles.toggleLabel}>Email Notifications</div>
-            <div style={styles.toggleDescription}>
-              Receive email updates about important events
-            </div>
-          </div>
-          <label style={styles.switch}>
-            <input
-              type="checkbox"
-              checked={notificationData.emailNotifications}
-              onChange={(e) =>
-                setNotificationData({
-                  ...notificationData,
-                  emailNotifications: e.target.checked,
-                })
-              }
-            />
-            <span style={styles.slider}></span>
-          </label>
-        </div>
-        <div style={styles.toggleGroup}>
-          <div>
-            <div style={styles.toggleLabel}>Report Alerts</div>
-            <div style={styles.toggleDescription}>
-              Get notified when new reports are submitted
-            </div>
-          </div>
-          <label style={styles.switch}>
-            <input
-              type="checkbox"
-              checked={notificationData.reportAlerts}
-              onChange={(e) =>
-                setNotificationData({
-                  ...notificationData,
-                  reportAlerts: e.target.checked,
-                })
-              }
-            />
-            <span style={styles.slider}></span>
-          </label>
-        </div>
-        <div style={styles.toggleGroup}>
-          <div>
-            <div style={styles.toggleLabel}>Payment Alerts</div>
-            <div style={styles.toggleDescription}>
-              Receive alerts for payment transactions
-            </div>
-          </div>
-          <label style={styles.switch}>
-            <input
-              type="checkbox"
-              checked={notificationData.paymentAlerts}
-              onChange={(e) =>
-                setNotificationData({
-                  ...notificationData,
-                  paymentAlerts: e.target.checked,
-                })
-              }
-            />
-            <span style={styles.slider}></span>
-          </label>
-        </div>
-        <div style={styles.toggleGroup}>
-          <div>
-            <div style={styles.toggleLabel}>Feedback Alerts</div>
-            <div style={styles.toggleDescription}>
-              Get notified about new user feedback
-            </div>
-          </div>
-          <label style={styles.switch}>
-            <input
-              type="checkbox"
-              checked={notificationData.feedbackAlerts}
-              onChange={(e) =>
-                setNotificationData({
-                  ...notificationData,
-                  feedbackAlerts: e.target.checked,
-                })
-              }
-            />
-            <span style={styles.slider}></span>
-          </label>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderSystemSettings = () => (
-    <div style={styles.section}>
-      <h3 style={styles.sectionTitle}>System Configuration</h3>
-      <div style={styles.form}>
-        <div style={styles.toggleGroup}>
-          <div>
-            <div style={styles.toggleLabel}>Maintenance Mode</div>
-            <div style={styles.toggleDescription}>
-              Enable maintenance mode for system updates
-            </div>
-          </div>
-          <label style={styles.switch}>
-            <input
-              type="checkbox"
-              checked={systemData.maintenanceMode}
-              onChange={(e) =>
-                setSystemData({
-                  ...systemData,
-                  maintenanceMode: e.target.checked,
-                })
-              }
-            />
-            <span style={styles.slider}></span>
-          </label>
-        </div>
-        <div style={styles.toggleGroup}>
-          <div>
-            <div style={styles.toggleLabel}>Automatic Backup</div>
-            <div style={styles.toggleDescription}>
-              Automatically backup database
-            </div>
-          </div>
-          <label style={styles.switch}>
-            <input
-              type="checkbox"
-              checked={systemData.autoBackup}
-              onChange={(e) =>
-                setSystemData({ ...systemData, autoBackup: e.target.checked })
-              }
-            />
-            <span style={styles.slider}></span>
-          </label>
-        </div>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Backup Frequency</label>
-          <select
-            value={systemData.backupFrequency}
-            onChange={(e) =>
-              setSystemData({ ...systemData, backupFrequency: e.target.value })
-            }
-            style={styles.input}
-            disabled={!systemData.autoBackup}
-          >
-            <option value="hourly">Hourly</option>
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-          </select>
-        </div>
-        <div style={styles.actionButtons}>
-          <button style={styles.actionButton}>
-            <RefreshCw size={16} />
-            Backup Now
-          </button>
-          <button
-            style={{ ...styles.actionButton, backgroundColor: "#ef4444" }}
-          >
-            <Database size={16} />
-            Clear Cache
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="dashboard-container">
       <Sidebar />
       <div className="main-content">
-        {/* Header */}
         <div className="header">
           <div className="header-right">
             <div className="user-info">
@@ -459,12 +291,8 @@ const SettingsPage = () => {
             </div>
           </div>
         </div>
-
-        {/* Settings Content */}
         <div className="content-area">
           <h2 style={styles.pageTitle}>Settings</h2>
-
-          {/* Message */}
           {message && (
             <div
               style={{
@@ -480,7 +308,6 @@ const SettingsPage = () => {
           )}
 
           <div style={styles.container}>
-            {/* Sidebar Tabs */}
             <div style={styles.sidebar}>
               <button
                 style={{
@@ -502,34 +329,12 @@ const SettingsPage = () => {
                 <Lock size={18} />
                 Security
               </button>
-              <button
-                style={{
-                  ...styles.tab,
-                  ...(activeTab === "notifications" ? styles.tabActive : {}),
-                }}
-                onClick={() => setActiveTab("notifications")}
-              >
-                <Bell size={18} />
-                Notifications
-              </button>
-              <button
-                style={{
-                  ...styles.tab,
-                  ...(activeTab === "system" ? styles.tabActive : {}),
-                }}
-                onClick={() => setActiveTab("system")}
-              >
-                <Shield size={18} />
-                System
-              </button>
             </div>
 
             {/* Content Area */}
             <div style={styles.content}>
               {activeTab === "profile" && renderProfileSettings()}
               {activeTab === "security" && renderSecuritySettings()}
-              {activeTab === "notifications" && renderNotificationSettings()}
-              {activeTab === "system" && renderSystemSettings()}
 
               {/* Save Button */}
               <div style={styles.saveSection}>

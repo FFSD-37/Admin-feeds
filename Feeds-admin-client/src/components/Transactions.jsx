@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   BadgeIndianRupee,
   User,
@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import "../styles/transactions.css";
+import { AuthContext } from "../context/AuthContext";
+import { useContext } from "react";
 
 const PaymentsPage = () => {
   const [payments, setPayments] = useState([]);
@@ -18,6 +20,7 @@ const PaymentsPage = () => {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchPayments = async () => {
@@ -175,7 +178,7 @@ const PaymentsPage = () => {
                 alt="User"
                 className="user-avatar"
               />
-              <span className="user-name">Admin</span>
+              <span className="user-name">{user.username}</span>
             </div>
           </div>
         </div>
