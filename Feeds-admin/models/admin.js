@@ -13,6 +13,14 @@ const adminSchema = new mongoose.Schema({
     },
     email: {
         type: String,
+    },
+    twoFactorSecret: {
+        type: String,
+        select: false
+    },
+    twoFactorEnabled: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true });
 

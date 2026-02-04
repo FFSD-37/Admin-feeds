@@ -15,6 +15,9 @@ import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 
 const SettingsPage = () => {
+  const [qrCode, setQrCode] = useState(null);
+  const [otp, setOtp] = useState("");
+  const [showOtpInput, setShowOtpInput] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
@@ -32,7 +35,7 @@ const SettingsPage = () => {
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
-    twoFactorEnabled: false,
+    twoFactorEnabled: user.twoFactorEnabled,
   });
 
   // Notification Settings State
@@ -49,6 +52,32 @@ const SettingsPage = () => {
     autoBackup: true,
     backupFrequency: "daily",
   });
+
+  const verifyOtp = async () => {
+    try {
+      const res = await fetch("http://localhost:8080/setting/verify-2fa", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ otp }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setMessage({ type: "success", text: "2FA enabled successfully" });
+        setQrCode(null);
+        setShowOtpInput(false);
+        setOtp("");
+      } else {
+        setMessage({ type: "error", text: data.msg });
+      }
+    } catch {
+      setMessage({ type: "error", text: "OTP verification failed" });
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -81,12 +110,20 @@ const SettingsPage = () => {
 
       if (data.success) {
         setMessage({ type: "success", text: data.msg });
+
+        // 🔐 If backend sends QR code → start 2FA setup flow
+        if (activeTab === "security" && data.qrCode) {
+          setQrCode(data.qrCode);
+          setShowOtpInput(true);
+          return; // stop here, don't reset form yet
+        }
+
         if (activeTab === "security") {
           setSecurityData({
             currentPassword: "",
             newPassword: "",
             confirmPassword: "",
-            twoFactorEnabled: securityData.twoFactorEnabled, // keep toggle as-is
+            twoFactorEnabled: securityData.twoFactorEnabled,
           });
         }
       } else {
@@ -197,6 +234,43 @@ const SettingsPage = () => {
             <span style={styles.slider}></span>
           </label>
         </div>
+        {qrCode && (
+          <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
+            <h4 style={{ marginBottom: "0.5rem" }}>
+              Scan this QR with Google Authenticator
+            </h4>
+            <img
+              src={qrCode}
+              alt="2FA QR Code"
+              style={{ margin: "1rem auto" }}
+            />
+
+            {showOtpInput && (
+              <div style={{ marginTop: "1rem" }}>
+                <input
+                  type="text"
+                  placeholder="Enter 6-digit OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  style={{
+                    ...styles.input,
+                    textAlign: "center",
+                    letterSpacing: "4px",
+                    width: "200px",
+                    margin: "0 auto",
+                  }}
+                />
+
+                <button
+                  style={{ ...styles.saveButton, marginTop: "1rem" }}
+                  onClick={verifyOtp}
+                >
+                  Verify OTP
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

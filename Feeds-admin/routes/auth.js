@@ -74,12 +74,7 @@ auth.get("/status", async (req, res) => {
 
         return res.status(200).json({
             isAuthenticated: true,
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                role: "admin",
-            },
+            user: user
         });
     } catch (err) {
         return res.status(401).json({
