@@ -10,7 +10,6 @@ import {
   Trash2,
   Ban,
   Shield,
-  Eye,
   MoreVertical,
   Crown,
   Users as UsersIcon,
@@ -93,6 +92,23 @@ const UsersPage = () => {
     return colors[type?.toLowerCase()] || '#f3f4f6';
   };
 
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const searchStyles = {
+    container: { display: 'flex', alignItems: 'center', gap: '8px' },
+    input: {
+      padding: '8px 12px',
+      borderRadius: '8px',
+      border: '1px solid #e5e7eb',
+      width: '320px',
+      outline: 'none',
+      fontSize: '14px',
+    },
+    clearBtn: { background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: '14px' },
+  };
+
+  const handleClearSearch = () => setSearchQuery("");
+
   const filteredUsers = filterType === 'all' 
     ? users 
     : filterType === 'premium'
@@ -107,6 +123,17 @@ const UsersPage = () => {
     nonPremium: users.filter(u => !u.isPremium).length,
     kids: users.filter(u => u.type?.toLowerCase() === 'kids').length,
   };
+
+  const searchedUsers = (filteredUsers || []).filter((u) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (u.username || '').toString().toLowerCase().includes(q) ||
+      (u.fullName || '').toString().toLowerCase().includes(q) ||
+      (u.email || '').toString().toLowerCase().includes(q) ||
+      (u.bio || '').toString().toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="dashboard-container">
@@ -129,9 +156,22 @@ const UsersPage = () => {
         <div className="content-area">
           <div className="users-header">
             <h2 className="users-title">All Users</h2>
-            <div className="users-stats">
-              <span className="stat-badge">Total: {users.length}</span>
-              <span className="stat-badge premium">Premium: {userStats.premium}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="search"
+                placeholder="Search username, name, email or bio..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={searchStyles.input}
+                aria-label="Search users"
+              />
+              {searchQuery && (
+                <button onClick={handleClearSearch} style={searchStyles.clearBtn} aria-label="Clear search">Clear</button>
+              )}
+              <div className="users-stats" style={{ marginLeft: '8px' }}>
+                <span className="stat-badge">Total: {searchedUsers.length}</span>
+                <span className="stat-badge premium">Premium: {userStats.premium}</span>
+              </div>
             </div>
           </div>
 
@@ -211,14 +251,14 @@ const UsersPage = () => {
               <div className="spinner" />
               <p>Loading users...</p>
             </div>
-          ) : filteredUsers.length === 0 ? (
+          ) : searchedUsers.length === 0 ? (
             <div className="empty-state">
               <User size={48} color="#9ca3af" />
-              <p className="empty-text">No users found</p>
+              <p className="empty-text">No users match your search</p>
             </div>
           ) : (
             <div className="users-grid">
-              {filteredUsers.map((user) => (
+              {searchedUsers.map((user) => (
                 <div 
                   key={user._id || user.id} 
                   className="user-card"

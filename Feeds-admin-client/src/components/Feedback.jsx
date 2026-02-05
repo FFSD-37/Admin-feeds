@@ -86,6 +86,38 @@ const FeedbacksPage = () => {
     return colors[subject?.toLowerCase()] || '#f3f4f6';
   };
 
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const searchStyles = {
+    container: { display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '1rem' },
+    input: {
+      padding: '8px 12px',
+      borderRadius: '8px',
+      border: '1px solid #e5e7eb',
+      width: '320px',
+      outline: 'none',
+      fontSize: '14px',
+    },
+    clearBtn: { background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: '14px' },
+  };
+
+  const handleClearSearch = () => setSearchQuery("");
+
+  const filteredFeedbacks = (feedbacks || []).filter((f) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    const name = f.name || "";
+    const email = f.email || "";
+    const message = f.message || "";
+    const subject = f.subject || "";
+    return (
+      name.toLowerCase().includes(q) ||
+      email.toLowerCase().includes(q) ||
+      message.toLowerCase().includes(q) ||
+      subject.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="dashboard-container">
       {/* Sidebar */}
@@ -111,8 +143,21 @@ const FeedbacksPage = () => {
         <div className="content-area">
           <div style={styles.header}>
             <h2 style={styles.pageTitle}>User Feedbacks</h2>
-            <div style={styles.stats}>
-              <span style={styles.statBadge}>Total: {feedbacks.length}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="search"
+                placeholder="Search name, email, subject or message..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={searchStyles.input}
+                aria-label="Search feedbacks"
+              />
+              {searchQuery && (
+                <button onClick={handleClearSearch} style={searchStyles.clearBtn} aria-label="Clear search">Clear</button>
+              )}
+              <div style={styles.stats}>
+                <span style={styles.statBadge}>Total: {filteredFeedbacks.length}</span>
+              </div>
             </div>
           </div>
           
@@ -126,9 +171,14 @@ const FeedbacksPage = () => {
               <MessageSquare size={48} color="#9ca3af" />
               <p style={styles.emptyText}>No feedbacks yet</p>
             </div>
+          ) : filteredFeedbacks.length === 0 ? (
+            <div style={styles.emptyState}>
+              <MessageSquare size={48} color="#9ca3af" />
+              <p style={styles.emptyText}>No feedbacks match your search</p>
+            </div>
           ) : (
             <div style={styles.feedbackList}>
-              {feedbacks.map((feedback) => (
+              {filteredFeedbacks.map((feedback) => (
                 <div 
                   key={feedback.id || feedback._id} 
                   style={{

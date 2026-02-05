@@ -19,6 +19,8 @@ const ChannelsPage = () => {
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [showMenu, setShowMenu] = useState(null);
   const { user } = useContext(AuthContext);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterCategory, setFilterCategory] = useState("all");
 
   useEffect(() => {
     const fetchChannels = async () => {
@@ -76,6 +78,70 @@ const ChannelsPage = () => {
     return colors[category?.toLowerCase()] || "#f3f4f6";
   };
 
+  // Extract unique categories from channels
+  const uniqueCategories = [...new Set(channels.flatMap(ch => ch.channelCategory || []))].sort();
+
+  // Count channels per category
+  const categoryCounts = {
+    all: channels.length,
+    ...Object.fromEntries(
+      uniqueCategories.map(cat => [
+        cat.toLowerCase(),
+        channels.filter(ch => ch.channelCategory?.includes(cat)).length
+      ])
+    )
+  };
+
+  // Inline styles for search bar
+  const searchStyles = {
+    container: {
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      marginTop: "8px",
+    },
+    input: {
+      padding: "8px 12px",
+      borderRadius: "8px",
+      border: "1px solid #e5e7eb",
+      width: "280px",
+      outline: "none",
+      boxShadow: "inset 0 1px 2px rgba(0,0,0,0.03)",
+      fontSize: "14px",
+    },
+    clearBtn: {
+      background: "transparent",
+      border: "none",
+      cursor: "pointer",
+      color: "#6b7280",
+      fontSize: "14px",
+    },
+  };
+
+  const handleClearSearch = () => setSearchQuery("");
+
+  const filteredChannels = (channels || []).filter((channel) => {
+    // Apply category filter
+    if (filterCategory !== "all") {
+      const cats = channel.channelCategory || [];
+      if (!cats.some(c => c.toLowerCase() === filterCategory.toLowerCase())) {
+        return false;
+      }
+    }
+
+    // Apply search filter
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    const name = channel.channelName || "";
+    const desc = channel.channelDescription || "";
+    const cats = channel.channelCategory || [];
+    return (
+      name.toLowerCase().includes(q) ||
+      desc.toLowerCase().includes(q) ||
+      cats.some((c) => c.toLowerCase().includes(q))
+    );
+  });
+
   return (
     <div className="dashboard-container">
       <Sidebar />
@@ -98,9 +164,65 @@ const ChannelsPage = () => {
         <div className="content-area">
           <div className="channels-header">
             <h2 className="channels-title">All Channels</h2>
-            <div className="channels-stats">
-              <span className="stat-badge">Total: {channels?.length}</span>
+
+            <div style={searchStyles.container}>
+              <input
+                type="search"
+                placeholder="Search channels, descriptions or categories..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={searchStyles.input}
+                aria-label="Search channels"
+              />
+              {searchQuery && (
+                <button
+                  onClick={handleClearSearch}
+                  style={searchStyles.clearBtn}
+                  aria-label="Clear search"
+                >
+                  Clear
+                </button>
+              )}
             </div>
+          </div>
+
+          {/* Category Filters */}
+          <div style={{ display: "flex", gap: "8px", marginBottom: "2rem", flexWrap: "wrap", alignItems: "center" }}>
+            <button
+              onClick={() => setFilterCategory("all")}
+              style={{
+                padding: "8px 14px",
+                borderRadius: "20px",
+                border: filterCategory === "all" ? "2px solid #4f46e5" : "1px solid #e5e7eb",
+                backgroundColor: filterCategory === "all" ? "#eef2ff" : "#ffffff",
+                color: filterCategory === "all" ? "#4f46e5" : "#6b7280",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: filterCategory === "all" ? "600" : "500",
+                transition: "all 0.2s ease",
+              }}
+            >
+              All ({categoryCounts.all})
+            </button>
+            {uniqueCategories.map((category) => (
+              <button
+                key={category}
+                onClick={() => setFilterCategory(category.toLowerCase())}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: "20px",
+                  border: filterCategory === category.toLowerCase() ? "2px solid #4f46e5" : "1px solid #e5e7eb",
+                  backgroundColor: filterCategory === category.toLowerCase() ? getCategoryColor(category) : "#ffffff",
+                  color: filterCategory === category.toLowerCase() ? "#1f2937" : "#6b7280",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: filterCategory === category.toLowerCase() ? "600" : "500",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {category} ({categoryCounts[category.toLowerCase()] || 0})
+              </button>
+            ))}
           </div>
 
           {loading ? (
@@ -113,9 +235,14 @@ const ChannelsPage = () => {
               <FileText size={48} color="#9ca3af" />
               <p className="empty-text">No channels found</p>
             </div>
+          ) : filteredChannels?.length === 0 ? (
+            <div className="empty-state">
+              <FileText size={48} color="#9ca3af" />
+              <p className="empty-text">No channels match your search</p>
+            </div>
           ) : (
             <div className="channels-grid">
-              {channels?.map((channel) => (
+              {filteredChannels?.map((channel) => (
                 <div key={channel._id} className="channel-card">
                   {/* Card Header with Logo */}
                   <div className="card-header">

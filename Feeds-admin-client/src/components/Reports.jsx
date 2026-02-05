@@ -15,6 +15,23 @@ const ReportsPage = () => {
   const { setIsAuthenticated, user } = useContext(AuthContext);
 //   let statusCounts;
 
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const searchStyles = {
+    container: { display: "flex", alignItems: "center", gap: "8px" },
+    input: {
+      padding: "8px 12px",
+      borderRadius: "8px",
+      border: "1px solid #e5e7eb",
+      width: "320px",
+      outline: "none",
+      fontSize: "14px",
+    },
+    clearBtn: { background: "transparent", border: "none", cursor: "pointer", color: "#6b7280", fontSize: "14px" },
+  };
+
+  const handleClearSearch = () => setSearchQuery("");
+
   useEffect(() => {
     const fetchReports = async () => {
       try {
@@ -98,6 +115,21 @@ const ReportsPage = () => {
           (report) => report.status.toLowerCase() === filterStatus,
         );
 
+  const searchedReports = (filteredReports || []).filter((report) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toString().toLowerCase();
+    const number = (report.report_number || "").toString();
+    const postId = (report.post_id || "").toString();
+    const userReported = (report.user_reported || "").toString();
+    const reason = (report.reason || "").toString();
+    return (
+      number.toLowerCase().includes(q) ||
+      postId.toLowerCase().includes(q) ||
+      userReported.toLowerCase().includes(q) ||
+      reason.toLowerCase().includes(q)
+    );
+  });
+
   const statusCounts = {
     all: reports.length,
     pending: reports.filter((r) => r.status?.toLowerCase() === "pending")
@@ -129,11 +161,26 @@ const ReportsPage = () => {
         <div className="content-area">
           <div className="header">
             <h2 className="pageTitle">User Reports</h2>
-            <div className="stats">
-              <span className="statBadge">Total: {reports.length}</span>
-              <span className="statBadge pendingBadge">
-                Pending: {statusCounts.pending}
-              </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <input
+                type="search"
+                placeholder="Search report #, post id, user or reason..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={searchStyles.input}
+                aria-label="Search reports"
+              />
+              {searchQuery && (
+                <button onClick={handleClearSearch} style={searchStyles.clearBtn} aria-label="Clear search">
+                  Clear
+                </button>
+              )}
+              <div className="stats" style={{ marginLeft: "8px" }}>
+                <span className="statBadge">Total: {searchedReports.length}</span>
+                <span className="statBadge pendingBadge">
+                  Pending: {statusCounts.pending}
+                </span>
+              </div>
             </div>
           </div>
           <div className="filterTabs">
@@ -175,14 +222,14 @@ const ReportsPage = () => {
               <div className="spinner" />
               <p>Loading reports...</p>
             </div>
-          ) : filteredReports.length === 0 ? (
+          ) : searchedReports.length === 0 ? (
             <div className="emptyState">
               <AlertTriangle size={48} color="#9ca3af" />
-              <p className="emptyText">No reports found</p>
+              <p className="emptyText">No reports match your search</p>
             </div>
           ) : (
             <div className="reportList">
-              {filteredReports.map((report) => {
+              {searchedReports.map((report) => {
                 const statusStyle = getStatusColor(report.status);
                 return (
                   <div
