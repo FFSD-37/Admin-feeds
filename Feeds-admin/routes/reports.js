@@ -7,31 +7,29 @@ import { transporter } from "../utils/mailer.js";
 
 export const reports = express.Router();
 
-reports.get("/list", async (req, res) => {
+reports.get("/list", async (req, res, next) => {
   try {
     const re = await Report.find({}).sort({ createdAt: -1 });
     return res.status(200).json({
       success: true,
       reports: re,
     });
-  } catch {
-    return res.status(500).json({
-      success: false,
-      msg: "Interval server error",
-    });
+  } catch (e) {
+    e.statusCode = 500;
+    e.message = "Internal server error";
+    return next(e);
   }
 });
 
-reports.post("/updateReportStatus", async (req, res) => {
+reports.post("/updateReportStatus", async (req, res, next) => {
   try {
     const { reportId, status } = req.body;
 
     const report = await Report.findById(reportId);
     if (!report) {
-      return res.status(404).json({
-        success: false,
-        msg: "Report not found",
-      });
+      const err = new Error("Report not found");
+      err.statusCode = 404;
+      return next(err);
     }
 
     const oldStatus = report.status;
@@ -49,8 +47,6 @@ reports.post("/updateReportStatus", async (req, res) => {
     const user = await User.findOne({ username: report.user_reported });
 
     if (user && user.email) {
-      console.log("MAIL_USER:", process.env.MAIL_USER);
-      console.log("MAIL_PASS loaded:", process.env.MAIL_PASS ? "YES" : "NO");
       await transporter.sendMail({
         from: `"Admin" <${process.env.MAIL_USER}>`,
         to: user.email,
@@ -70,11 +66,9 @@ reports.post("/updateReportStatus", async (req, res) => {
       success: true,
       msg: "Status updated successfully",
     });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      msg: "Error while updating status of the report",
-    });
+  } catch (e) {
+    e.statusCode = 500;
+    e.message = "Error while updating status of the report";
+    return next(e);
   }
 });

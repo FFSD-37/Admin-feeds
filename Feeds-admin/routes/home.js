@@ -16,7 +16,7 @@ home.get("/", (req, res) => {
   });
 });
 
-home.get("/getUsers", async (req, res) => {
+home.get("/getUsers", async (req, res, next) => {
   try {
     const users = await User.find({}).sort({ followers: -1 }).limit(4);
     return res.status(200).json({
@@ -24,14 +24,13 @@ home.get("/getUsers", async (req, res) => {
       data: users,
     });
   } catch (e) {
-    return res.status(404).json({
-      success: false,
-      msg: "Error while fetching users",
-    });
+    e.statusCode = 404;
+    e.message = "Error while fetching users";
+    return next(e);
   }
 });
 
-home.get("/getChannels", async (req, res) => {
+home.get("/getChannels", async (req, res, next) => {
   try {
     const channels = await Channel.find({}).sort({ followers: -1 }).limit(5);
     return res.status(200).json({
@@ -39,35 +38,35 @@ home.get("/getChannels", async (req, res) => {
       data: channels,
     });
   } catch (e) {
-    return res.status(404).json({
-      success: false,
-      msg: "Error while fetching channels",
-    });
+    e.statusCode = 404;
+    e.message = "Error while fetching channels";
+    return next(e);
   }
 });
 
-home.get("/getRevenue", async (req, res) => {
+home.get("/getRevenue", async (req, res, next) => {
   try {
     const trans = await Payment.find({});
     let total = 0;
+
     trans.forEach((ele) => {
       if (ele.status === "Completed") {
         total += Number(ele.amount);
       }
     });
+
     return res.status(200).json({
       success: true,
       rev: total,
     });
   } catch (e) {
-    return res.status(500).json({
-      success: false,
-      msg: "Error fetching total revenue",
-    });
+    e.statusCode = 500;
+    e.message = "Error fetching total revenue";
+    return next(e);
   }
 });
 
-home.get("/getUserCount", async (req, res) => {
+home.get("/getUserCount", async (req, res, next) => {
   try {
     const users = await User.find({});
     const channels = await Channel.find({});
@@ -76,14 +75,13 @@ home.get("/getUserCount", async (req, res) => {
       count: users.length + channels.length,
     });
   } catch (e) {
-    return res.status(500).json({
-      success: false,
-      msg: "Error fetching total users",
-    });
+    e.statusCode = 500;
+    e.message = "Error fetching total users";
+    return next(e);
   }
 });
 
-home.get("/getReach", async (req, res) => {
+home.get("/getReach", async (req, res, next) => {
   try {
     const data = await ActivityLog.aggregate([
       {
@@ -102,21 +100,22 @@ home.get("/getReach", async (req, res) => {
         },
       },
     ]);
+
     const count = await ActivityLog.find({});
+
     return res.status(200).json({
       success: true,
-      data: data,
+      data,
       count: count.length,
     });
-  } catch (er) {
-    return res.status(500).json({
-      success: false,
-      msg: "Internal server error",
-    });
+  } catch (e) {
+    e.statusCode = 500;
+    e.message = "Internal server error";
+    return next(e);
   }
 });
 
-home.get("/reportData", async (req, res) => {
+home.get("/reportData", async (req, res, next) => {
   try {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -150,18 +149,16 @@ home.get("/reportData", async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data
+      data,
     });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      msg: "Internal server error",
-      error,
-    });
+  } catch (e) {
+    e.statusCode = 500;
+    e.message = "Internal server error";
+    return next(e);
   }
 });
 
-home.get("/contentActivityToday", async (req, res) => {
+home.get("/contentActivityToday", async (req, res, next) => {
   try {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -174,17 +171,17 @@ home.get("/contentActivityToday", async (req, res) => {
         type: "Img",
         createdAt: { $gte: startOfDay, $lt: endOfDay },
         isArchived: false,
-        ispublic: true
+        ispublic: true,
       }),
       Post.countDocuments({
         type: "Reels",
         createdAt: { $gte: startOfDay, $lt: endOfDay },
         isArchived: false,
-        ispublic: true
+        ispublic: true,
       }),
       Story.countDocuments({
-        createdAt: { $gte: startOfDay, $lt: endOfDay }
-      })
+        createdAt: { $gte: startOfDay, $lt: endOfDay },
+      }),
     ]);
 
     return res.status(200).json({
@@ -192,13 +189,12 @@ home.get("/contentActivityToday", async (req, res) => {
       data: {
         postsToday,
         reelsToday,
-        storiesToday
-      }
+        storiesToday,
+      },
     });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      msg: "Internal server error"
-    });
+  } catch (e) {
+    e.statusCode = 500;
+    e.message = "Internal server error";
+    return next(e);
   }
 });

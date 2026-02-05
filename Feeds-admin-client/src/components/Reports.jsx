@@ -13,7 +13,6 @@ const ReportsPage = () => {
   const [selectedReport, setSelectedReport] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const { setIsAuthenticated, user } = useContext(AuthContext);
-//   let statusCounts;
 
   const [searchQuery, setSearchQuery] = useState("");
 

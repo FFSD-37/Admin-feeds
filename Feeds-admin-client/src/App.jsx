@@ -10,10 +10,12 @@ import ReportsPage from "./components/Reports.jsx";
 import PaymentsPage from "./components/Transactions.jsx";
 import SettingsPage from "./components/Settings.jsx";
 import ChannelsPage from "./components/ChannelList.jsx";
+import ErrorPage from "./components/ErrorPage.jsx";
 
 function App() {
   return (
     <Router>
+      <ErrorPage />
       <Routes>
         <Route element={<PublicRoute />}>
           <Route path="/login" element={<AdminLoginPage />} />

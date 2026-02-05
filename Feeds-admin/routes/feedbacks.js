@@ -3,18 +3,16 @@ import Feedback from '../models/feedback.js';
 
 export const feedback = express.Router();
 
-feedback.get("/list", async (req, res) => {
-    try{
+feedback.get("/list", async (req, res, next) => {
+    try {
         const fb = await Feedback.find({}).sort({ createdAt: -1 });
-        // console.log(fb);
         return res.status(200).json({
             success: true,
-            feedbacks : fb
+            feedbacks: fb
         });
-    } catch {
-        return res.status(500).json({
-            success: false,
-            msg: "Error fetching feedbacks"
-        })
+    } catch (e) {
+        e.statusCode = 500;
+        e.message = "Error fetching feedbacks";
+        return next(e);
     }
 });

@@ -1,9 +1,9 @@
 import express from 'express';
-import Channel from '../models/channelSchema.js'
+import Channel from '../models/channelSchema.js';
 
 export const channel = express.Router();
 
-channel.get("/list", async (req, res) => {
+channel.get("/list", async (req, res, next) => {
     try {
         const c = await Channel.find({});
         return res.status(200).json({
@@ -11,9 +11,8 @@ channel.get("/list", async (req, res) => {
             allchannels: c
         });
     } catch (e) {
-        return res.status(500).json({
-            success: false,
-            msg: "Error fetching channel list"
-        });
+        e.statusCode = 500;
+        e.message = "Error fetching channel list";
+        return next(e);
     }
-})
+});

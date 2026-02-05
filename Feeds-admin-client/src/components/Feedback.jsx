@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
 import {
-  BarChart3,
-  Book,
-  ShoppingCart,
-  Monitor,
-  LogOut,
   Mail,
   User,
   MessageSquare,
@@ -14,54 +9,32 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import "../styles/dashboard.css";
 import Sidebar from './Sidebar';
+import api, { apiCall } from "../utils/api";
+import { useError } from "../context/ErrorContext";
 
 const FeedbacksPage = () => {
-  const navigate = useNavigate();
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
-  const { setIsAuthenticated, user } = useContext(AuthContext);
-  // console.log(user);
-  const logout = async () => {
-    const res = await fetch("http://localhost:8080/auth/logout", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json"
-      },
-    });
-    const data = await res.json();
-    if (data.success){
-      setIsAuthenticated(false);
-      navigate("/login", { replace: true });
+  const { user } = useContext(AuthContext);
+  const { showError } = useError();
+
+  useEffect(() => {
+  const fetchFeedbacks = async () => {
+    try {
+      const data = await apiCall(
+        () => api.get("/feedback/list"),
+        showError
+      );
+
+      setFeedbacks(data.feedbacks);
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    const fetchFeedbacks = async () => {
-      try {
-        const res = await fetch("http://localhost:8080/feedback/list", {
-          method: "GET",
-          credentials: 'include',
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const data = await res.json();
-        if (data.success) {
-          setFeedbacks(data.feedbacks);
-        } else {
-          alert("Error fetching feedbacks");
-        }
-      } catch (error) {
-        console.error("Error fetching feedbacks:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFeedbacks();
-  }, []);
+  fetchFeedbacks();
+}, []);
 
   const formatDate = (dateObj) => {
     if (!dateObj) return 'N/A';
