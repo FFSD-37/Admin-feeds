@@ -31,12 +31,6 @@ const SettingsPage = () => {
   });
 
   // Security Settings State
-  const [securityData, setSecurityData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-    twoFactorEnabled: user.twoFactorEnabled,
-  });
 
   // Notification Settings State
   const [notificationData, setNotificationData] = useState({
@@ -136,6 +130,13 @@ const SettingsPage = () => {
       setTimeout(() => setMessage(null), 3000);
     }
   };
+
+  const [securityData, setSecurityData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+    twoFactorEnabled: Boolean(user.twoFactorEnabled),
+  });
 
   const renderProfileSettings = () => (
     <div style={styles.section}>
@@ -274,6 +275,10 @@ const SettingsPage = () => {
       </div>
     </div>
   );
+
+
+
+  console.log(user);
 
   return (
     <div className="dashboard-container">

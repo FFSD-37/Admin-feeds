@@ -15,6 +15,7 @@ import { payment } from './routes/payments.js';
 import { channel } from './routes/channels.js';
 import { connectDB } from './DB/Connection.js';
 import { setting } from './routes/settings.js';
+import { adminLogger } from "./middlewares/adminLogger.js";
 import auth from './routes/auth.js';
 
 // configuration
@@ -34,6 +35,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // database connection
 connectDB();
+
+// Application level middlewares
+app.use(adminLogger);
 
 // health checks for the server
 app.get("/healthCheck", (req, res) => {
