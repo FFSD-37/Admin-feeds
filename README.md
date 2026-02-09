@@ -102,7 +102,8 @@ These middlewares are provided directly by Express.
 
 These middlewares are written specifically for this application.
 
-* `ErrorHandler` → Centralized global error-handling middleware
+* `ErrorHandler` → Centralized global error-handling middleware for consistent API responses and improved debugging.
+* `adminLogger` → Application-level logging middleware built using Morgan that captures request metadata and stores important activity logs (such as POST, PUT, DELETE requests) in the admin-logs MongoDB collection for auditing and monitoring.
 
 ---
 
