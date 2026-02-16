@@ -26,7 +26,7 @@ const AdminLoginPage = () => {
     });
     if (data.success) {
       setIsAuthenticated(true);
-      navigate("/dashboard", { replace: true });
+      window.location.href = "/dashboard";
     }
   };
 
