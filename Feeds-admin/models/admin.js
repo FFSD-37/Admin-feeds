@@ -14,6 +14,16 @@ const adminSchema = new mongoose.Schema({
     email: {
         type: String,
     },
+    role: {
+        type: String,
+        enum: ["admin", "manager"],
+        default: "admin"
+    },
+    status: {
+        type: String,
+        enum: ["active", "suspended"],
+        default: "active"
+    },
     twoFactorSecret: {
         type: String,
         select: false
