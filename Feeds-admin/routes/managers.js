@@ -3,7 +3,7 @@ import Admin from "../models/admin.js";
 import ManagerAction from "../models/managerAction.js";
 
 export const manager = express.Router();
-const VALID_MANAGER_TYPES = ["user", "channel", "kids", "revenue"];
+const VALID_MANAGER_TYPES = ["users", "posts", "feedback and revenue"];
 
 manager.get("/list", async (req, res, next) => {
   try {
@@ -123,7 +123,7 @@ manager.post("/create", async (req, res, next) => {
 
     if (!VALID_MANAGER_TYPES.includes(managerType)) {
       const err = new Error(
-        "managerType is required and must be one of: user, channel, kids, revenue"
+        "managerType is required and must be one of: users, posts, feedback and revenue"
       );
       err.statusCode = 400;
       return next(err);
@@ -200,7 +200,7 @@ manager.patch("/type/:id", async (req, res, next) => {
     const { managerType } = req.body;
     if (!VALID_MANAGER_TYPES.includes(managerType)) {
       const err = new Error(
-        "Invalid managerType. Allowed: user, channel, kids, revenue"
+        "Invalid managerType. Allowed: users, posts, feedback and revenue"
       );
       err.statusCode = 400;
       return next(err);
@@ -252,3 +252,4 @@ manager.delete("/:id", async (req, res, next) => {
     return next(e);
   }
 });
+
