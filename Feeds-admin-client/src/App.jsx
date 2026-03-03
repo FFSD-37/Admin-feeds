@@ -11,6 +11,7 @@ import PaymentsPage from "./components/Transactions.jsx";
 import SettingsPage from "./components/Settings.jsx";
 import ChannelsPage from "./components/ChannelList.jsx";
 import ErrorPage from "./components/ErrorPage.jsx";
+import Managers from "./components/Managers.jsx";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           <Route path="/transactions" element={<PaymentsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/channelList" element={<ChannelsPage />} />
+          <Route path="/managers" element={< Managers/>} />
         </Route>
       </Routes>
     </Router>

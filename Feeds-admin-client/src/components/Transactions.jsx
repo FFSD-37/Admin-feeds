@@ -20,6 +20,9 @@ const PaymentsPage = () => {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterType, setFilterType] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [selectedPeriod, setSelectedPeriod] = useState("custom");
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
@@ -61,10 +64,60 @@ const PaymentsPage = () => {
   };
 
   const formatAmount = (amount) => {
+    const value = Number(amount) || 0;
     return new Intl.NumberFormat("en-IN", {
-      className: "currency",
+      style: "currency",
       currency: "INR",
-    }).format(amount);
+    }).format(value);
+  };
+
+  const getCreatedDate = (payment) => {
+    if (!payment) return null;
+    const created = payment.createdAt;
+    if (!created) return null;
+    try {
+      return created.$date ? new Date(created.$date) : new Date(created);
+    } catch (e) {
+      return new Date(created);
+    }
+  };
+
+  const applyPeriod = (period) => {
+    const now = new Date();
+    let start = null;
+    let end = new Date(now);
+
+    switch (period) {
+      case "last_month":
+        start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+        break;
+      case "last_quarter":
+        start = new Date(now.getFullYear(), now.getMonth() - 3, 1);
+        end = new Date(now);
+        break;
+      case "last_6_months":
+        start = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+        end = new Date(now);
+        break;
+      case "last_year":
+        start = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        end = new Date(now);
+        break;
+      default:
+        start = null;
+        end = null;
+    }
+
+    if (start && end) {
+      setFromDate(start.toISOString().slice(0, 10));
+      setToDate(end.toISOString().slice(0, 10));
+      setSelectedPeriod(period);
+    } else {
+      setFromDate("");
+      setToDate("");
+      setSelectedPeriod("custom");
+    }
   };
 
   const getStatusConfig = (status) => {
@@ -148,6 +201,19 @@ const PaymentsPage = () => {
     return statusMatch && typeMatch;
   });
 
+  // Apply date range filtering on top of status/type filters
+  const finalDisplayedPayments = filteredPayments.filter((payment) => {
+    if (!fromDate && !toDate) return true;
+    const created = getCreatedDate(payment);
+    if (!created) return false;
+    const start = fromDate ? new Date(fromDate + "T00:00:00") : null;
+    const end = toDate ? new Date(toDate + "T23:59:59") : null;
+    if (start && end) return created >= start && created <= end;
+    if (start) return created >= start;
+    if (end) return created <= end;
+    return true;
+  });
+
   const statusCounts = {
     all: payments.length,
     pending: payments.filter((p) => p.status.toLowerCase() === "pending")
@@ -164,6 +230,11 @@ const PaymentsPage = () => {
   const completedAmount = payments
     .filter((p) => p.status.toLowerCase() === "completed")
     .reduce((sum, payment) => sum + parseFloat(payment.amount), 0);
+
+  const intervalTotal = finalDisplayedPayments.reduce(
+    (sum, payment) => sum + (Number(payment.amount) || 0),
+    0,
+  );
 
   return (
     <div className="dashboard-container">
@@ -199,6 +270,15 @@ const PaymentsPage = () => {
                 }}
               >
                 Completed: {formatAmount(completedAmount)}
+              </span>
+              <span
+                className="statBadge"
+                style={{
+                  backgroundColor: "#eef2ff",
+                  color: "#3730a3",
+                }}
+              >
+                Revenue: {formatAmount(intervalTotal)}
               </span>
             </div>
           </div>
@@ -284,6 +364,63 @@ const PaymentsPage = () => {
                 <option value="annually">Annually</option>
               </select>
             </div>
+
+            <div className="filterGroup dateFilters">
+              <span className="filterLabel">From:</span>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => {
+                  setFromDate(e.target.value);
+                  setSelectedPeriod("custom");
+                }}
+                className="filterDate"
+              />
+
+              <span className="filterLabel">To:</span>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => {
+                  setToDate(e.target.value);
+                  setSelectedPeriod("custom");
+                }}
+                className="filterDate"
+              />
+
+              <div className="periodButtons">
+                <button
+                  className={`periodBtn ${selectedPeriod === "last_month" ? "active" : ""}`}
+                  onClick={() => applyPeriod("last_month")}
+                >
+                  Last Month
+                </button>
+                <button
+                  className={`periodBtn ${selectedPeriod === "last_quarter" ? "active" : ""}`}
+                  onClick={() => applyPeriod("last_quarter")}
+                >
+                  Last Quarter
+                </button>
+                <button
+                  className={`periodBtn ${selectedPeriod === "last_6_months" ? "active" : ""}`}
+                  onClick={() => applyPeriod("last_6_months")}
+                >
+                  Last 6 Months
+                </button>
+                <button
+                  className={`periodBtn ${selectedPeriod === "last_year" ? "active" : ""}`}
+                  onClick={() => applyPeriod("last_year")}
+                >
+                  Last Year
+                </button>
+                <button
+                  className="periodBtn"
+                  onClick={() => applyPeriod("custom")}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
           </div>
 
           {loading ? (
@@ -291,14 +428,14 @@ const PaymentsPage = () => {
               <div className="spinner" />
               <p>Loading payments...</p>
             </div>
-          ) : filteredPayments.length === 0 ? (
+          ) : finalDisplayedPayments.length === 0 ? (
             <div className="emptyState">
               <BadgeIndianRupee size={48} color="#9ca3af" />
               <p className="emptyText">No payments found</p>
             </div>
           ) : (
             <div className="paymentList">
-              {filteredPayments.map((payment) => {
+              {finalDisplayedPayments.map((payment) => {
                 const statusConfig = getStatusConfig(payment.status);
                 const StatusIcon = statusConfig.icon;
 

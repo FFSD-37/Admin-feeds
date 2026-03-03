@@ -100,6 +100,16 @@ export default function Sidebar() {
         </NavLink>
 
         <NavLink
+          to="/managers"
+          className={({ isActive }) =>
+            isActive ? "nav-item active" : "nav-item"
+          }
+        >
+          <Book size={18} />
+          <span>Managers</span>
+        </NavLink>
+
+        <NavLink
           to="/settings"
           className={({ isActive }) =>
             isActive ? "nav-item active" : "nav-item"
