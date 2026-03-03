@@ -33,7 +33,17 @@ npm start
 - Copy `.env-example` to `.env` inside `Feeds-admin` and fill values.
 - Admin authentication rejects manager accounts.
 - Admin APIs now include `/manager/*` endpoints for manager account lifecycle.
-- While creating managers, pass `managerType` as one of: `user`, `channel`, `kids`, `revenue`.
+- While creating managers, pass `managerType` as one of: `users`, `posts`, `feedback and revenue`.
 - Admin can track manager work via:
   - `GET /manager/list` (includes performance summary)
   - `GET /manager/performance/:id` (detailed action history)
+
+## Report IDs
+
+- `1`: normal/kids account report
+- `2`: channel account report
+- `3`: normal/kids post report
+- `4`: channel post report
+- `5`: normal chat report
+- `6`: channel chat report
+
