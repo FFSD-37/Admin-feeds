@@ -71,6 +71,7 @@ const AdminLoginPage = () => {
             required
           />
         </div>
+        <a href="http://localhost:5173">Login as a Manager?</a>
         <button type="submit" style={styles.button}>
           Log In
         </button>

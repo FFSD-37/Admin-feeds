@@ -16,6 +16,7 @@ import { manager } from "./routes/managers.js";
 import { connectDB } from "./DB/Connection.js";
 import { setting } from "./routes/settings.js";
 import { adminLogger } from "./middlewares/adminLogger.js";
+import { setupSwagger } from "./docs/swagger.js";
 import auth from "./routes/auth.js";
 
 dotenv.config();
@@ -33,6 +34,7 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 connectDB();
+setupSwagger(app);
 
 app.use(adminLogger);
 
