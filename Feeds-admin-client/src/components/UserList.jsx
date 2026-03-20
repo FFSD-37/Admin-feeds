@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import { AuthContext } from "../context/AuthContext";
 import {
   User,
@@ -16,58 +15,92 @@ import {
   Heart,
   Bookmark,
   FileText,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import "../styles/dashboard.css";
 import "../styles/userlist.css";
 import Sidebar from "./Sidebar";
+import PostCards from "./PostCards";
+
+const USERS_PER_PAGE = 12;
+const USER_MODAL_POST_LIMIT = 5;
 
 const UsersPage = () => {
-  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUserPosts, setSelectedUserPosts] = useState([]);
+  const [selectedUserPostsLoading, setSelectedUserPostsLoading] = useState(false);
+  const [selectedUserPostsLoadingMore, setSelectedUserPostsLoadingMore] = useState(false);
+  const [selectedUserPostsPagination, setSelectedUserPostsPagination] = useState({
+    page: 1,
+    hasMore: false,
+    total: 0,
+  });
+  const [postActionLoadingId, setPostActionLoadingId] = useState(null);
   const [showMenu, setShowMenu] = useState(null);
-  const [filterType, setFilterType] = useState('all');
-  const { setIsAuthenticated, user } = useContext(AuthContext);
+  const [filterType, setFilterType] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
+  const { user } = useContext(AuthContext);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const res = await fetch("http://localhost:8080/user/list", {
+  const fetchUsers = async (targetPage = 1) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(targetPage),
+        limit: String(USERS_PER_PAGE),
+      });
+      if (searchQuery.trim()) {
+        params.set("search", searchQuery.trim());
+      }
+
+      const res = await fetch(
+        `http://localhost:8080/user/list?${params.toString()}`,
+        {
           method: "GET",
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
-        });
-        const data = await res.json();
-        if (data.success) {
-          setUsers(data.data);
-        } else {
-          alert("Error fetching users");
         }
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      } finally {
-        setLoading(false);
+      );
+      const data = await res.json();
+      if (data.success) {
+        setUsers(data.data || []);
+        setPagination(data.pagination || { page: targetPage, totalPages: 1, total: 0 });
+      } else {
+        alert("Error fetching users");
       }
-    };
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchUsers();
-  }, []);
+  useEffect(() => {
+    fetchUsers(page);
+  }, [page, searchQuery]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
 
   const formatDate = (dateObj) => {
-    if (!dateObj) return 'N/A';
+    if (!dateObj) return "N/A";
     const date = dateObj.$date ? new Date(dateObj.$date) : new Date(dateObj);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   const calculateAge = (dob) => {
-    if (!dob) return 'N/A';
+    if (!dob) return "N/A";
     const birthDate = dob.$date ? new Date(dob.$date) : new Date(dob);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -78,62 +111,202 @@ const UsersPage = () => {
     return age;
   };
 
-  const handleManage = (user, action) => {
+  const handleManage = (targetUser, action) => {
     setShowMenu(null);
-    console.log(`${action} user:`, user.username);
-    // Implement your action logic here
+    console.log(`${action} user:`, targetUser.username);
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const isMenuControl =
+        event.target.closest(".menu-button") || event.target.closest(".dropdown-menu");
+      if (!isMenuControl && showMenu !== null) {
+        setShowMenu(null);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && showMenu !== null) {
+        setShowMenu(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showMenu]);
 
   const getTypeColor = (type) => {
     const colors = {
-      'normal': '#dbeafe',
-      'kids': '#fce7f3',
+      normal: "#dbeafe",
+      kids: "#fce7f3",
     };
-    return colors[type?.toLowerCase()] || '#f3f4f6';
+    return colors[type?.toLowerCase()] || "#f3f4f6";
   };
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const fetchSelectedUserPosts = async (targetPage = 1, append = false) => {
+    if (!selectedUser?.username) {
+      setSelectedUserPosts([]);
+      return;
+    }
 
-  const searchStyles = {
-    container: { display: 'flex', alignItems: 'center', gap: '8px' },
-    input: {
-      padding: '8px 12px',
-      borderRadius: '8px',
-      border: '1px solid #e5e7eb',
-      width: '320px',
-      outline: 'none',
-      fontSize: '14px',
-    },
-    clearBtn: { background: 'transparent', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: '14px' },
+    if (append) {
+      setSelectedUserPostsLoadingMore(true);
+    } else {
+      setSelectedUserPostsLoading(true);
+    }
+
+    try {
+      const res = await fetch(
+        `http://localhost:8080/post/user/${selectedUser.username}?page=${targetPage}&limit=${USER_MODAL_POST_LIMIT}`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setSelectedUserPosts((current) =>
+          append ? [...current, ...(data.posts || [])] : data.posts || []
+        );
+        setSelectedUserPostsPagination(
+          data.pagination || { page: targetPage, hasMore: false, total: 0 }
+        );
+      } else {
+        setSelectedUserPosts([]);
+      }
+    } catch (error) {
+      console.error("Error fetching selected user posts:", error);
+      setSelectedUserPosts([]);
+    } finally {
+      setSelectedUserPostsLoading(false);
+      setSelectedUserPostsLoadingMore(false);
+    }
   };
 
-  const handleClearSearch = () => setSearchQuery("");
+  useEffect(() => {
+    if (!selectedUser?.username) {
+      setSelectedUserPosts([]);
+      setSelectedUserPostsPagination({ page: 1, hasMore: false, total: 0 });
+      return;
+    }
 
-  const filteredUsers = filterType === 'all' 
-    ? users 
-    : filterType === 'premium'
-    ? users.filter(user => user.isPremium)
-    : filterType === 'kids'
-    ? users.filter(user => user.type?.toLowerCase() === 'kids')
-    : users.filter(user => !user.isPremium);
+    fetchSelectedUserPosts(1, false);
+  }, [selectedUser]);
+
+  const handleToggleUserPostArchive = async (post) => {
+    const postKey = post._id || post.id;
+    setPostActionLoadingId(postKey);
+
+    try {
+      const endpoint = post.isArchived
+        ? `http://localhost:8080/post/${post._id}/restore`
+        : `http://localhost:8080/post/${post._id}/archive`;
+
+      const res = await fetch(endpoint, {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || data.msg || "Unable to update post");
+      }
+
+      setSelectedUserPosts((currentPosts) =>
+        currentPosts.map((currentPost) =>
+          (currentPost._id || currentPost.id) === postKey
+            ? { ...currentPost, isArchived: !currentPost.isArchived }
+            : currentPost
+        )
+      );
+    } catch (error) {
+      console.error("Error updating user post:", error);
+      alert("Could not update post status");
+    } finally {
+      setPostActionLoadingId(null);
+    }
+  };
+
+  const handleDeleteUserPost = async (post) => {
+    const postKey = post._id || post.id;
+    setPostActionLoadingId(postKey);
+
+    try {
+      const res = await fetch(`http://localhost:8080/post/${post._id}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || data.msg || "Unable to delete post");
+      }
+
+      setSelectedUserPosts((currentPosts) =>
+        currentPosts.filter((currentPost) => (currentPost._id || currentPost.id) !== postKey)
+      );
+      setSelectedUserPostsPagination((current) => ({
+        ...current,
+        total: Math.max(0, (current.total || 0) - 1),
+      }));
+    } catch (error) {
+      console.error("Error deleting user post:", error);
+      alert("Could not delete post");
+    } finally {
+      setPostActionLoadingId(null);
+    }
+  };
+
+  const fetchComments = async (post, commentsPage = 1) => {
+    const res = await fetch(
+      `http://localhost:8080/post/${post._id}/comments?page=${commentsPage}&limit=5`,
+      {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const data = await res.json();
+    if (!data.success) {
+      throw new Error(data.message || data.msg || "Unable to fetch comments");
+    }
+    return data;
+  };
+
+  const filteredUsers = useMemo(() => {
+    const baseUsers =
+      filterType === "all"
+        ? users
+        : filterType === "premium"
+          ? users.filter((item) => item.isPremium)
+          : filterType === "kids"
+            ? users.filter((item) => item.type?.toLowerCase() === "kids")
+            : users.filter((item) => !item.isPremium);
+
+    return baseUsers || [];
+  }, [filterType, users]);
 
   const userStats = {
-    all: users.length,
-    premium: users.filter(u => u.isPremium).length,
-    nonPremium: users.filter(u => !u.isPremium).length,
-    kids: users.filter(u => u.type?.toLowerCase() === 'kids').length,
+    all: pagination.total || 0,
+    premium: users.filter((item) => item.isPremium).length,
+    nonPremium: users.filter((item) => !item.isPremium).length,
+    kids: users.filter((item) => item.type?.toLowerCase() === "kids").length,
   };
-
-  const searchedUsers = (filteredUsers || []).filter((u) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      (u.username || '').toString().toLowerCase().includes(q) ||
-      (u.fullName || '').toString().toLowerCase().includes(q) ||
-      (u.email || '').toString().toLowerCase().includes(q) ||
-      (u.bio || '').toString().toLowerCase().includes(q)
-    );
-  });
 
   return (
     <div className="dashboard-container">
@@ -156,26 +329,31 @@ const UsersPage = () => {
         <div className="content-area">
           <div className="users-header">
             <h2 className="users-title">All Users</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="toolbar-wrap">
               <input
                 type="search"
                 placeholder="Search username, name, email or bio..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={searchStyles.input}
+                className="responsive-search-input"
                 aria-label="Search users"
               />
               {searchQuery && (
-                <button onClick={handleClearSearch} style={searchStyles.clearBtn} aria-label="Clear search">Clear</button>
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="clear-inline-button"
+                  aria-label="Clear search"
+                >
+                  Clear
+                </button>
               )}
-              <div className="users-stats" style={{ marginLeft: '8px' }}>
-                <span className="stat-badge">Total: {searchedUsers.length}</span>
-                <span className="stat-badge premium">Premium: {userStats.premium}</span>
+              <div className="users-stats">
+                <span className="stat-badge">Visible: {filteredUsers.length}</span>
+                <span className="stat-badge premium">Premium on page: {userStats.premium}</span>
               </div>
             </div>
           </div>
 
-          {/* Summary Cards */}
           <div className="summary-grid">
             <div className="summary-card">
               <div className="summary-icon">
@@ -186,128 +364,126 @@ const UsersPage = () => {
                 <div className="summary-value">{userStats.all}</div>
               </div>
             </div>
-
             <div className="summary-card">
               <div className="summary-icon premium-icon">
                 <Crown size={24} color="#f59e0b" />
               </div>
               <div>
-                <div className="summary-label">Premium</div>
+                <div className="summary-label">Premium On Page</div>
                 <div className="summary-value">{userStats.premium}</div>
               </div>
             </div>
-
             <div className="summary-card">
               <div className="summary-icon normal-icon">
                 <User size={24} color="#10b981" />
               </div>
               <div>
-                <div className="summary-label">Non-Premium</div>
+                <div className="summary-label">Non-Premium On Page</div>
                 <div className="summary-value">{userStats.nonPremium}</div>
               </div>
             </div>
-
             <div className="summary-card">
               <div className="summary-icon kids-icon">
                 <Shield size={24} color="#ec4899" />
               </div>
               <div>
-                <div className="summary-label">Kids</div>
+                <div className="summary-label">Kids On Page</div>
                 <div className="summary-value">{userStats.kids}</div>
               </div>
             </div>
           </div>
 
-          {/* Filters */}
           <div className="filters-container">
-            <button 
-              className={`filter-btn ${filterType === 'all' ? 'active' : ''}`}
-              onClick={() => setFilterType('all')}
+            <button
+              className={`filter-btn ${filterType === "all" ? "active" : ""}`}
+              onClick={() => setFilterType("all")}
             >
-              All ({userStats.all})
+              All
             </button>
-            <button 
-              className={`filter-btn ${filterType === 'premium' ? 'active' : ''}`}
-              onClick={() => setFilterType('premium')}
+            <button
+              className={`filter-btn ${filterType === "premium" ? "active" : ""}`}
+              onClick={() => setFilterType("premium")}
             >
-              Premium ({userStats.premium})
+              Premium
             </button>
-            <button 
-              className={`filter-btn ${filterType === 'non-premium' ? 'active' : ''}`}
-              onClick={() => setFilterType('non-premium')}
+            <button
+              className={`filter-btn ${filterType === "non-premium" ? "active" : ""}`}
+              onClick={() => setFilterType("non-premium")}
             >
-              Non-Premium ({userStats.nonPremium})
+              Non-Premium
             </button>
-            <button 
-              className={`filter-btn ${filterType === 'kids' ? 'active' : ''}`}
-              onClick={() => setFilterType('kids')}
+            <button
+              className={`filter-btn ${filterType === "kids" ? "active" : ""}`}
+              onClick={() => setFilterType("kids")}
             >
-              Kids ({userStats.kids})
+              Kids
             </button>
           </div>
-          
+
           {loading ? (
             <div className="loading-container">
               <div className="spinner" />
               <p>Loading users...</p>
             </div>
-          ) : searchedUsers.length === 0 ? (
+          ) : filteredUsers.length === 0 ? (
             <div className="empty-state">
               <User size={48} color="#9ca3af" />
               <p className="empty-text">No users match your search</p>
             </div>
           ) : (
             <div className="users-grid">
-              {searchedUsers.map((user) => (
-                <div 
-                  key={user._id || user.id} 
+              {filteredUsers.map((listUser) => (
+                <div
+                  key={listUser._id || listUser.id}
                   className="user-card"
                   style={{
-                    borderLeft: `4px solid ${user.isPremium ? '#f59e0b' : '#6366f1'}`,
+                    borderLeft: `4px solid ${listUser.isPremium ? "#f59e0b" : "#6366f1"}`,
                   }}
                 >
                   <div className="card-header">
                     <div className="user-avatar-section">
                       <img
                         src={
-                          user.profilePicture ||
-                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`
+                          listUser.profilePicture ||
+                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${listUser.username}`
                         }
-                        alt={user.username}
+                        alt={listUser.username}
                         className="user-avatar-large"
                       />
-                      {user.isPremium && (
+                      {listUser.isPremium && (
                         <div className="premium-badge">
                           <Crown size={14} />
                         </div>
                       )}
                     </div>
-                    <button 
+                    <button
                       className="menu-button"
-                      onClick={() => setShowMenu(showMenu === user._id ? null : user._id)}
+                      onClick={() =>
+                        setShowMenu(showMenu === listUser._id ? null : listUser._id)
+                      }
                     >
                       <MoreVertical size={18} />
                     </button>
-                    
-                    {showMenu === user._id && (
+
+                    {showMenu === listUser._id && (
                       <div className="dropdown-menu">
-                        <button 
+                        <button
                           className="menu-item"
-                          onClick={() => handleManage(user, 'edit')}
+                          onClick={() => handleManage(listUser, "edit")}
                         >
                           <Edit size={16} />
                           Edit
                         </button>
-                        <button 
+                        <button
                           className="menu-item"
-                          onClick={() => handleManage(user, 'ban')}
+                          onClick={() => handleManage(listUser, "ban")}
                         >
                           <Ban size={16} />
                           Ban User
                         </button>
-                        <button 
+                        <button
                           className="menu-item danger"
-                          onClick={() => handleManage(user, 'delete')}
+                          onClick={() => handleManage(listUser, "delete")}
                         >
                           <Trash2 size={16} />
                           Delete
@@ -317,11 +493,13 @@ const UsersPage = () => {
                   </div>
 
                   <div className="user-main-info">
-                    <h3 className="user-name">{user.fullName || user.username}</h3>
-                    <p className="user-username">@{user.username}</p>
-                    {user.bio && (
+                    <h3 className="user-name">{listUser.fullName || listUser.username}</h3>
+                    <p className="user-username">@{listUser.username}</p>
+                    {listUser.bio && (
                       <p className="user-bio">
-                        {user.bio.length > 80 ? `${user.bio.substring(0, 80)}...` : user.bio}
+                        {listUser.bio.length > 80
+                          ? `${listUser.bio.substring(0, 80)}...`
+                          : listUser.bio}
                       </p>
                     )}
                   </div>
@@ -329,29 +507,27 @@ const UsersPage = () => {
                   <div className="user-details-grid">
                     <div className="detail-item">
                       <Mail size={14} />
-                      <span>{user.email}</span>
+                      <span>{listUser.email}</span>
                     </div>
-                    {user.phone && (
+                    {listUser.phone && (
                       <div className="detail-item">
                         <Phone size={14} />
-                        <span>{user.phone}</span>
+                        <span>{listUser.phone}</span>
                       </div>
                     )}
                   </div>
 
                   <div className="user-badges">
-                    <span 
+                    <span
                       className="type-badge"
-                      style={{ backgroundColor: getTypeColor(user.type) }}
+                      style={{ backgroundColor: getTypeColor(listUser.type) }}
                     >
-                      {user.type || 'Normal'}
+                      {listUser.type || "Normal"}
                     </span>
                     <span className="status-badge">
-                      {user.isPremium ? 'Premium' : 'Free'}
+                      {listUser.isPremium ? "Premium" : "Free"}
                     </span>
-                    {user.gender && (
-                      <span className="gender-badge">{user.gender}</span>
-                    )}
+                    {listUser.gender && <span className="gender-badge">{listUser.gender}</span>}
                   </div>
 
                   <div className="user-stats-grid">
@@ -359,21 +535,21 @@ const UsersPage = () => {
                       <UsersIcon size={16} />
                       <div>
                         <div className="stat-label">Followers</div>
-                        <div className="stat-count">{user.followers?.length || 0}</div>
+                        <div className="stat-count">{listUser.followers?.length || 0}</div>
                       </div>
                     </div>
                     <div className="stat-box">
                       <FileText size={16} />
                       <div>
                         <div className="stat-label">Posts</div>
-                        <div className="stat-count">{user.postIds?.length || 0}</div>
+                        <div className="stat-count">{listUser.postIds?.length || 0}</div>
                       </div>
                     </div>
                     <div className="stat-box">
                       <Heart size={16} />
                       <div>
                         <div className="stat-label">Likes</div>
-                        <div className="stat-count">{user.likedPostsIds?.length || 0}</div>
+                        <div className="stat-count">{listUser.likedPostsIds?.length || 0}</div>
                       </div>
                     </div>
                   </div>
@@ -381,12 +557,9 @@ const UsersPage = () => {
                   <div className="card-footer">
                     <div className="date-info">
                       <Calendar size={14} />
-                      <span>Joined {formatDate(user.createdAt)}</span>
+                      <span>Joined {formatDate(listUser.createdAt)}</span>
                     </div>
-                    <button 
-                      className="manage-button"
-                      onClick={() => setSelectedUser(user)}
-                    >
+                    <button className="manage-button" onClick={() => setSelectedUser(listUser)}>
                       Manage
                     </button>
                   </div>
@@ -394,25 +567,49 @@ const UsersPage = () => {
               ))}
             </div>
           )}
+
+          <div className="pagination-row">
+            <button
+              type="button"
+              className="pagination-button"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page <= 1 || loading}
+            >
+              <ChevronLeft size={16} />
+              <span>Previous</span>
+            </button>
+            <div className="pagination-status">
+              Page {pagination.page || page} of {pagination.totalPages || 1}
+            </div>
+            <button
+              type="button"
+              className="pagination-button"
+              onClick={() =>
+                setPage((current) =>
+                  Math.min(pagination.totalPages || current, current + 1)
+                )
+              }
+              disabled={page >= (pagination.totalPages || 1) || loading}
+            >
+              <span>Next</span>
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Modal for detailed view */}
       {selectedUser && (
         <div className="modal-overlay" onClick={() => setSelectedUser(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">User Details</h3>
-              <button 
-                className="close-button"
-                onClick={() => setSelectedUser(null)}
-              >
-                ✕
+              <button className="close-button" onClick={() => setSelectedUser(null)}>
+                x
               </button>
             </div>
             <div className="modal-body">
               <div className="modal-user-section">
-                <img 
+                <img
                   src={
                     selectedUser.profilePicture ||
                     `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedUser.username}`
@@ -441,11 +638,11 @@ const UsersPage = () => {
                 </div>
                 <div className="modal-row">
                   <span className="modal-label">Phone:</span>
-                  <span className="modal-value">{selectedUser.phone || 'N/A'}</span>
+                  <span className="modal-value">{selectedUser.phone || "N/A"}</span>
                 </div>
                 <div className="modal-row">
                   <span className="modal-label">Gender:</span>
-                  <span className="modal-value">{selectedUser.gender || 'N/A'}</span>
+                  <span className="modal-value">{selectedUser.gender || "N/A"}</span>
                 </div>
                 <div className="modal-row">
                   <span className="modal-label">Age:</span>
@@ -461,21 +658,23 @@ const UsersPage = () => {
                 <h4 className="section-title">Account Information</h4>
                 <div className="modal-row">
                   <span className="modal-label">Account Type:</span>
-                  <span className="modal-value">{selectedUser.type || 'Normal'}</span>
+                  <span className="modal-value">{selectedUser.type || "Normal"}</span>
                 </div>
                 <div className="modal-row">
                   <span className="modal-label">Subscription:</span>
-                  <span className="modal-value">{selectedUser.isPremium ? 'Premium' : 'Free'}</span>
+                  <span className="modal-value">
+                    {selectedUser.isPremium ? "Premium" : "Free"}
+                  </span>
                 </div>
                 <div className="modal-row">
                   <span className="modal-label">Visibility:</span>
-                  <span className="modal-value">{selectedUser.visibility || 'Public'}</span>
+                  <span className="modal-value">{selectedUser.visibility || "Public"}</span>
                 </div>
                 <div className="modal-row">
                   <span className="modal-label">Coins:</span>
                   <span className="modal-value">{selectedUser.coins || 0}</span>
                 </div>
-                {selectedUser.type?.toLowerCase() === 'kids' && selectedUser.timeLimit && (
+                {selectedUser.type?.toLowerCase() === "kids" && selectedUser.timeLimit && (
                   <div className="modal-row">
                     <span className="modal-label">Time Limit:</span>
                     <span className="modal-value">{selectedUser.timeLimit} minutes</span>
@@ -492,7 +691,9 @@ const UsersPage = () => {
                     </div>
                     <div>
                       <div className="modal-stat-label">Followers</div>
-                      <div className="modal-stat-value">{selectedUser.followers?.length || 0}</div>
+                      <div className="modal-stat-value">
+                        {selectedUser.followers?.length || 0}
+                      </div>
                     </div>
                   </div>
                   <div className="modal-stat-card">
@@ -501,7 +702,9 @@ const UsersPage = () => {
                     </div>
                     <div>
                       <div className="modal-stat-label">Following</div>
-                      <div className="modal-stat-value">{selectedUser.followings?.length || 0}</div>
+                      <div className="modal-stat-value">
+                        {selectedUser.followings?.length || 0}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -521,7 +724,9 @@ const UsersPage = () => {
                     </div>
                     <div>
                       <div className="modal-stat-label">Liked Posts</div>
-                      <div className="modal-stat-value">{selectedUser.likedPostsIds?.length || 0}</div>
+                      <div className="modal-stat-value">
+                        {selectedUser.likedPostsIds?.length || 0}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -532,7 +737,9 @@ const UsersPage = () => {
                     </div>
                     <div>
                       <div className="modal-stat-label">Saved Posts</div>
-                      <div className="modal-stat-value">{selectedUser.savedPostsIds?.length || 0}</div>
+                      <div className="modal-stat-value">
+                        {selectedUser.savedPostsIds?.length || 0}
+                      </div>
                     </div>
                   </div>
                   <div className="modal-stat-card">
@@ -541,7 +748,9 @@ const UsersPage = () => {
                     </div>
                     <div>
                       <div className="modal-stat-label">Channels</div>
-                      <div className="modal-stat-value">{selectedUser.channelFollowings?.length || 0}</div>
+                      <div className="modal-stat-value">
+                        {selectedUser.channelFollowings?.length || 0}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -564,6 +773,37 @@ const UsersPage = () => {
                   <span className="modal-label">Last Updated:</span>
                   <span className="modal-value">{formatDate(selectedUser.updatedAt)}</span>
                 </div>
+              </div>
+
+              <div className="modal-section post-section">
+                <div className="post-section-header">
+                  <div>
+                    <h4 className="post-section-title">User Posts</h4>
+                    <p className="post-section-subtitle">
+                      Showing 5 at a time with comments, archive, restore, and delete controls.
+                    </p>
+                  </div>
+                  <span className="post-count-chip">
+                    {selectedUserPostsPagination.total || 0} posts
+                  </span>
+                </div>
+                <PostCards
+                  posts={selectedUserPosts}
+                  loading={selectedUserPostsLoading}
+                  emptyMessage="This user has not created any posts yet."
+                  onToggleArchive={handleToggleUserPostArchive}
+                  onDeletePost={handleDeleteUserPost}
+                  actionLoadingId={postActionLoadingId}
+                  fetchComments={fetchComments}
+                  hasMore={selectedUserPostsPagination.hasMore}
+                  onLoadMore={() =>
+                    fetchSelectedUserPosts(
+                      (selectedUserPostsPagination.page || 1) + 1,
+                      true
+                    )
+                  }
+                  loadingMore={selectedUserPostsLoadingMore}
+                />
               </div>
 
               <div className="modal-actions">

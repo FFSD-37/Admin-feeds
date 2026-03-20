@@ -5,7 +5,8 @@ import {
   Monitor,
   LogOut,
   Users,
-  Antenna
+  Antenna,
+  FileText
 } from "lucide-react";
 import { AuthContext } from "../context/AuthContext";
 import { useContext } from "react";
@@ -67,6 +68,16 @@ export default function Sidebar() {
         >
           <Antenna size={18} />
           <span>Channels</span>
+        </NavLink>
+
+        <NavLink
+          to="/posts"
+          className={({ isActive }) =>
+            isActive ? "nav-item active" : "nav-item"
+          }
+        >
+          <FileText size={18} />
+          <span>Posts</span>
         </NavLink>
 
         <NavLink

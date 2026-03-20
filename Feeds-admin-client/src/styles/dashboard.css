@@ -877,3 +877,25 @@
 .settings-button:hover {
   color: #1f2937;
 }
+
+@media (max-width: 900px) {
+  .dashboard-container {
+    flex-direction: column;
+    min-height: 100vh;
+    height: auto;
+  }
+
+  .header {
+    padding: 0.75rem 1rem;
+  }
+
+  .content-area {
+    padding: 1rem;
+  }
+
+  .header-right,
+  .user-info {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

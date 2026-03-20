@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import {
   Users,
   FileText,
@@ -7,46 +7,83 @@ import {
   Edit,
   Trash2,
   Archive,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import "../styles/channelList.css";
 import Sidebar from "./Sidebar";
+import PostCards from "./PostCards";
 import { AuthContext } from "../context/AuthContext";
-import { useContext } from "react";
+
+const CHANNELS_PER_PAGE = 12;
+const CHANNEL_MODAL_POST_LIMIT = 5;
 
 const ChannelsPage = () => {
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedChannel, setSelectedChannel] = useState(null);
+  const [selectedChannelPosts, setSelectedChannelPosts] = useState([]);
+  const [selectedChannelPostsLoading, setSelectedChannelPostsLoading] = useState(false);
+  const [selectedChannelPostsLoadingMore, setSelectedChannelPostsLoadingMore] =
+    useState(false);
+  const [selectedChannelPostsPagination, setSelectedChannelPostsPagination] = useState({
+    page: 1,
+    hasMore: false,
+    total: 0,
+  });
+  const [postActionLoadingId, setPostActionLoadingId] = useState(null);
   const [showMenu, setShowMenu] = useState(null);
   const { user } = useContext(AuthContext);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
 
-  useEffect(() => {
-    const fetchChannels = async () => {
-      try {
-        const res = await fetch("http://localhost:8080/channel/list", {
+  const fetchChannels = async (targetPage = 1) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(targetPage),
+        limit: String(CHANNELS_PER_PAGE),
+      });
+      if (searchQuery.trim()) {
+        params.set("search", searchQuery.trim());
+      }
+      if (filterCategory && filterCategory !== "all") {
+        params.set("category", filterCategory);
+      }
+
+      const res = await fetch(
+        `http://localhost:8080/channel/list?${params.toString()}`,
+        {
           method: "GET",
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
-        });
-        const data = await res.json();
-        if (data.success) {
-          setChannels(data.allchannels);
-        } else {
-          alert("Error fetching channels");
         }
-      } catch (error) {
-        console.error("Error fetching channels:", error);
-      } finally {
-        setLoading(false);
+      );
+      const data = await res.json();
+      if (data.success) {
+        setChannels(data.allchannels || []);
+        setPagination(data.pagination || { page: targetPage, totalPages: 1, total: 0 });
+      } else {
+        alert("Error fetching channels");
       }
-    };
+    } catch (error) {
+      console.error("Error fetching channels:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchChannels();
-  }, []);
+  useEffect(() => {
+    fetchChannels(page);
+  }, [page, searchQuery, filterCategory]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, filterCategory]);
 
   const formatDate = (dateObj) => {
     if (!dateObj) return "N/A";
@@ -61,8 +98,31 @@ const ChannelsPage = () => {
   const handleManage = (channel, action) => {
     setShowMenu(null);
     console.log(`${action} channel:`, channel.channelName);
-    // Implement your action logic here
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const isMenuControl =
+        event.target.closest(".menu-button") || event.target.closest(".dropdown-menu");
+      if (!isMenuControl && showMenu !== null) {
+        setShowMenu(null);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && showMenu !== null) {
+        setShowMenu(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showMenu]);
 
   const getCategoryColor = (category) => {
     const colors = {
@@ -78,75 +138,166 @@ const ChannelsPage = () => {
     return colors[category?.toLowerCase()] || "#f3f4f6";
   };
 
-  // Extract unique categories from channels
-  const uniqueCategories = [...new Set(channels.flatMap(ch => ch.channelCategory || []))].sort();
+  const uniqueCategories = [...new Set(channels.flatMap((ch) => ch.channelCategory || []))].sort();
 
-  // Count channels per category
   const categoryCounts = {
-    all: channels.length,
+    all: pagination.total || 0,
     ...Object.fromEntries(
-      uniqueCategories.map(cat => [
+      uniqueCategories.map((cat) => [
         cat.toLowerCase(),
-        channels.filter(ch => ch.channelCategory?.includes(cat)).length
+        channels.filter((ch) => ch.channelCategory?.includes(cat)).length,
       ])
-    )
+    ),
   };
 
-  // Inline styles for search bar
-  const searchStyles = {
-    container: {
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-      marginTop: "8px",
-    },
-    input: {
-      padding: "8px 12px",
-      borderRadius: "8px",
-      border: "1px solid #e5e7eb",
-      width: "280px",
-      outline: "none",
-      boxShadow: "inset 0 1px 2px rgba(0,0,0,0.03)",
-      fontSize: "14px",
-    },
-    clearBtn: {
-      background: "transparent",
-      border: "none",
-      cursor: "pointer",
-      color: "#6b7280",
-      fontSize: "14px",
-    },
-  };
+  const filteredChannels = useMemo(() => channels || [], [channels]);
 
-  const handleClearSearch = () => setSearchQuery("");
-
-  const filteredChannels = (channels || []).filter((channel) => {
-    // Apply category filter
-    if (filterCategory !== "all") {
-      const cats = channel.channelCategory || [];
-      if (!cats.some(c => c.toLowerCase() === filterCategory.toLowerCase())) {
-        return false;
-      }
+  const fetchSelectedChannelPosts = async (targetPage = 1, append = false) => {
+    if (!selectedChannel?.channelName) {
+      setSelectedChannelPosts([]);
+      return;
     }
 
-    // Apply search filter
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    const name = channel.channelName || "";
-    const desc = channel.channelDescription || "";
-    const cats = channel.channelCategory || [];
-    return (
-      name.toLowerCase().includes(q) ||
-      desc.toLowerCase().includes(q) ||
-      cats.some((c) => c.toLowerCase().includes(q))
+    if (append) {
+      setSelectedChannelPostsLoadingMore(true);
+    } else {
+      setSelectedChannelPostsLoading(true);
+    }
+
+    try {
+      const res = await fetch(
+        `http://localhost:8080/post/channel/${encodeURIComponent(
+          selectedChannel.channelName
+        )}?page=${targetPage}&limit=${CHANNEL_MODAL_POST_LIMIT}`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setSelectedChannelPosts((current) =>
+          append ? [...current, ...(data.posts || [])] : data.posts || []
+        );
+        setSelectedChannelPostsPagination(
+          data.pagination || { page: targetPage, hasMore: false, total: 0 }
+        );
+      } else {
+        setSelectedChannelPosts([]);
+      }
+    } catch (error) {
+      console.error("Error fetching selected channel posts:", error);
+      setSelectedChannelPosts([]);
+    } finally {
+      setSelectedChannelPostsLoading(false);
+      setSelectedChannelPostsLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedChannel?.channelName) {
+      setSelectedChannelPosts([]);
+      setSelectedChannelPostsPagination({ page: 1, hasMore: false, total: 0 });
+      return;
+    }
+
+    fetchSelectedChannelPosts(1, false);
+  }, [selectedChannel]);
+
+  const handleToggleChannelPostArchive = async (post) => {
+    const postKey = post._id || post.id;
+    setPostActionLoadingId(postKey);
+
+    try {
+      const endpoint = post.isArchived
+        ? `http://localhost:8080/post/channel-post/${post._id}/restore`
+        : `http://localhost:8080/post/channel-post/${post._id}/archive`;
+
+      const res = await fetch(endpoint, {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || data.msg || "Unable to update post");
+      }
+
+      setSelectedChannelPosts((currentPosts) =>
+        currentPosts.map((currentPost) =>
+          (currentPost._id || currentPost.id) === postKey
+            ? { ...currentPost, isArchived: !currentPost.isArchived }
+            : currentPost
+        )
+      );
+    } catch (error) {
+      console.error("Error updating channel post:", error);
+      alert("Could not update post status");
+    } finally {
+      setPostActionLoadingId(null);
+    }
+  };
+
+  const handleDeleteChannelPost = async (post) => {
+    const postKey = post._id || post.id;
+    setPostActionLoadingId(postKey);
+
+    try {
+      const res = await fetch(`http://localhost:8080/post/channel-post/${post._id}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || data.msg || "Unable to delete post");
+      }
+
+      setSelectedChannelPosts((currentPosts) =>
+        currentPosts.filter((currentPost) => (currentPost._id || currentPost.id) !== postKey)
+      );
+      setSelectedChannelPostsPagination((current) => ({
+        ...current,
+        total: Math.max(0, (current.total || 0) - 1),
+      }));
+    } catch (error) {
+      console.error("Error deleting channel post:", error);
+      alert("Could not delete post");
+    } finally {
+      setPostActionLoadingId(null);
+    }
+  };
+
+  const fetchComments = async (post, commentsPage = 1) => {
+    const res = await fetch(
+      `http://localhost:8080/post/channel-post/${post._id}/comments?page=${commentsPage}&limit=5`,
+      {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
-  });
+    const data = await res.json();
+    if (!data.success) {
+      throw new Error(data.message || data.msg || "Unable to fetch comments");
+    }
+    return data;
+  };
 
   return (
     <div className="dashboard-container">
       <Sidebar />
       <div className="main-content">
-        {/* Header */}
         <div className="header">
           <div className="header-right">
             <div className="user-info">
@@ -160,24 +311,23 @@ const ChannelsPage = () => {
           </div>
         </div>
 
-        {/* Channels Content */}
         <div className="content-area">
           <div className="channels-header">
             <h2 className="channels-title">All Channels</h2>
 
-            <div style={searchStyles.container}>
+            <div className="toolbar-wrap">
               <input
                 type="search"
                 placeholder="Search channels, descriptions or categories..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={searchStyles.input}
+                className="responsive-search-input"
                 aria-label="Search channels"
               />
               {searchQuery && (
                 <button
-                  onClick={handleClearSearch}
-                  style={searchStyles.clearBtn}
+                  onClick={() => setSearchQuery("")}
+                  className="clear-inline-button"
                   aria-label="Clear search"
                 >
                   Clear
@@ -186,21 +336,10 @@ const ChannelsPage = () => {
             </div>
           </div>
 
-          {/* Category Filters */}
-          <div style={{ display: "flex", gap: "8px", marginBottom: "2rem", flexWrap: "wrap", alignItems: "center" }}>
+          <div className="category-filter-row">
             <button
               onClick={() => setFilterCategory("all")}
-              style={{
-                padding: "8px 14px",
-                borderRadius: "20px",
-                border: filterCategory === "all" ? "2px solid #4f46e5" : "1px solid #e5e7eb",
-                backgroundColor: filterCategory === "all" ? "#eef2ff" : "#ffffff",
-                color: filterCategory === "all" ? "#4f46e5" : "#6b7280",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: filterCategory === "all" ? "600" : "500",
-                transition: "all 0.2s ease",
-              }}
+              className={`category-filter-button ${filterCategory === "all" ? "active" : ""}`}
             >
               All ({categoryCounts.all})
             </button>
@@ -208,16 +347,14 @@ const ChannelsPage = () => {
               <button
                 key={category}
                 onClick={() => setFilterCategory(category.toLowerCase())}
+                className={`category-filter-button ${
+                  filterCategory === category.toLowerCase() ? "active" : ""
+                }`}
                 style={{
-                  padding: "8px 14px",
-                  borderRadius: "20px",
-                  border: filterCategory === category.toLowerCase() ? "2px solid #4f46e5" : "1px solid #e5e7eb",
-                  backgroundColor: filterCategory === category.toLowerCase() ? getCategoryColor(category) : "#ffffff",
-                  color: filterCategory === category.toLowerCase() ? "#1f2937" : "#6b7280",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: filterCategory === category.toLowerCase() ? "600" : "500",
-                  transition: "all 0.2s ease",
+                  backgroundColor:
+                    filterCategory === category.toLowerCase()
+                      ? getCategoryColor(category)
+                      : "#ffffff",
                 }}
               >
                 {category} ({categoryCounts[category.toLowerCase()] || 0})
@@ -244,21 +381,16 @@ const ChannelsPage = () => {
             <div className="channels-grid">
               {filteredChannels?.map((channel) => (
                 <div key={channel._id} className="channel-card">
-                  {/* Card Header with Logo */}
                   <div className="card-header">
                     <img
-                      src={
-                        channel.channelLogo || "https://via.placeholder.com/80"
-                      }
+                      src={channel.channelLogo || "https://via.placeholder.com/80"}
                       alt={channel.channelName}
                       className="channel-logo"
                     />
                     <button
                       className="menu-button"
                       onClick={() =>
-                        setShowMenu(
-                          showMenu === channel._id ? null : channel._id,
-                        )
+                        setShowMenu(showMenu === channel._id ? null : channel._id)
                       }
                     >
                       <MoreVertical size={18} />
@@ -291,17 +423,14 @@ const ChannelsPage = () => {
                     )}
                   </div>
 
-                  {/* Channel Name */}
                   <h3 className="channel-name">{channel.channelName}</h3>
 
-                  {/* Channel Description */}
                   <p className="channel-description">
                     {channel.channelDescription?.length > 100
                       ? `${channel.channelDescription.substring(0, 100)}...`
                       : channel.channelDescription}
                   </p>
 
-                  {/* Categories */}
                   <div className="categories-container">
                     {channel.channelCategory?.map((category, index) => (
                       <span
@@ -314,7 +443,6 @@ const ChannelsPage = () => {
                     ))}
                   </div>
 
-                  {/* Stats */}
                   <div className="channel-stats">
                     <div className="stat-item">
                       <Users size={16} />
@@ -326,16 +454,12 @@ const ChannelsPage = () => {
                     </div>
                   </div>
 
-                  {/* Footer */}
                   <div className="card-footer">
                     <div className="date-info">
                       <Calendar size={14} />
                       <span>{formatDate(channel.createdAt)}</span>
                     </div>
-                    <button
-                      className="manage-button"
-                      onClick={() => setSelectedChannel(channel)}
-                    >
+                    <button className="manage-button" onClick={() => setSelectedChannel(channel)}>
                       Manage
                     </button>
                   </div>
@@ -343,22 +467,43 @@ const ChannelsPage = () => {
               ))}
             </div>
           )}
+
+          <div className="pagination-row">
+            <button
+              type="button"
+              className="pagination-button"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page <= 1 || loading}
+            >
+              <ChevronLeft size={16} />
+              <span>Previous</span>
+            </button>
+            <div className="pagination-status">
+              Page {pagination.page || page} of {pagination.totalPages || 1}
+            </div>
+            <button
+              type="button"
+              className="pagination-button"
+              onClick={() =>
+                setPage((current) =>
+                  Math.min(pagination.totalPages || current, current + 1)
+                )
+              }
+              disabled={page >= (pagination.totalPages || 1) || loading}
+            >
+              <span>Next</span>
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
 
-        {/* Modal for detailed view */}
         {selectedChannel && (
-          <div
-            className="modal-overlay"
-            onClick={() => setSelectedChannel(null)}
-          >
+          <div className="modal-overlay" onClick={() => setSelectedChannel(null)}>
             <div className="modal" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h3 className="modal-title">Channel Details</h3>
-                <button
-                  className="close-button"
-                  onClick={() => setSelectedChannel(null)}
-                >
-                  ✕
+                <button className="close-button" onClick={() => setSelectedChannel(null)}>
+                  x
                 </button>
               </div>
               <div className="modal-body">
@@ -372,16 +517,12 @@ const ChannelsPage = () => {
 
                 <div className="modal-row">
                   <span className="modal-label">Channel Name:</span>
-                  <span className="modal-value">
-                    {selectedChannel.channelName}
-                  </span>
+                  <span className="modal-value">{selectedChannel.channelName}</span>
                 </div>
 
                 <div className="modal-row">
                   <span className="modal-label">Description:</span>
-                  <p className="modal-description">
-                    {selectedChannel.channelDescription}
-                  </p>
+                  <p className="modal-description">{selectedChannel.channelDescription}</p>
                 </div>
 
                 <div className="modal-row">
@@ -408,9 +549,7 @@ const ChannelsPage = () => {
 
                 <div className="modal-row">
                   <span className="modal-label">Total Posts:</span>
-                  <span className="modal-value">
-                    {selectedChannel.postIds?.length || 0}
-                  </span>
+                  <span className="modal-value">{selectedChannel.postIds?.length || 0}</span>
                 </div>
 
                 <div className="modal-row">
@@ -422,16 +561,43 @@ const ChannelsPage = () => {
 
                 <div className="modal-row">
                   <span className="modal-label">Created:</span>
-                  <span className="modal-value">
-                    {formatDate(selectedChannel.createdAt)}
-                  </span>
+                  <span className="modal-value">{formatDate(selectedChannel.createdAt)}</span>
                 </div>
 
                 <div className="modal-row">
                   <span className="modal-label">Last Updated:</span>
-                  <span className="modal-value">
-                    {formatDate(selectedChannel.updatedAt)}
-                  </span>
+                  <span className="modal-value">{formatDate(selectedChannel.updatedAt)}</span>
+                </div>
+
+                <div className="modal-section post-section">
+                  <div className="post-section-header">
+                    <div>
+                      <h4 className="post-section-title">Channel Posts</h4>
+                      <p className="post-section-subtitle">
+                        Showing 5 at a time with comments, archive, restore, and delete controls.
+                      </p>
+                    </div>
+                    <span className="post-count-chip">
+                      {selectedChannelPostsPagination.total || 0} posts
+                    </span>
+                  </div>
+                  <PostCards
+                    posts={selectedChannelPosts}
+                    loading={selectedChannelPostsLoading}
+                    emptyMessage="This channel does not have any posts yet."
+                    onToggleArchive={handleToggleChannelPostArchive}
+                    onDeletePost={handleDeleteChannelPost}
+                    actionLoadingId={postActionLoadingId}
+                    fetchComments={fetchComments}
+                    hasMore={selectedChannelPostsPagination.hasMore}
+                    onLoadMore={() =>
+                      fetchSelectedChannelPosts(
+                        (selectedChannelPostsPagination.page || 1) + 1,
+                        true
+                      )
+                    }
+                    loadingMore={selectedChannelPostsLoadingMore}
+                  />
                 </div>
 
                 <div className="modal-actions">
