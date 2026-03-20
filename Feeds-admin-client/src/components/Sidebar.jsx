@@ -17,7 +17,7 @@ export default function Sidebar() {
   const navigate = useNavigate();
 
   const logout = async () => {
-    const res = await fetch("http://localhost:8080/auth/logout", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/logout`, {
       method: "POST",
       credentials: "include",
       headers: {

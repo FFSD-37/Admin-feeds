@@ -28,7 +28,7 @@ const PaymentsPage = () => {
   useEffect(() => {
     const fetchPayments = async () => {
       try {
-        const res = await fetch("http://localhost:8080/payment/list", {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/payment/list`, {
           method: "GET",
           credentials: "include",
           headers: {
@@ -163,7 +163,7 @@ const PaymentsPage = () => {
   const handleStatusChange = async (paymentId, newStatus) => {
     try {
       const res = await fetch(
-        `http://localhost:8080/home/updatePaymentStatus`,
+        `${import.meta.env.VITE_API_URL}/home/updatePaymentStatus`,
         {
           method: "POST",
           credentials: "include",

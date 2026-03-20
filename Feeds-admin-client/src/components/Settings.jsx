@@ -49,7 +49,7 @@ const SettingsPage = () => {
 
   const verifyOtp = async () => {
     try {
-      const res = await fetch("http://localhost:8080/setting/verify-2fa", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/setting/verify-2fa`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -81,7 +81,7 @@ const SettingsPage = () => {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const res = await fetch("http://localhost:8080/setting/updateSettings", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/setting/updateSettings`, {
         method: "POST",
         credentials: "include",
         headers: {

@@ -34,7 +34,7 @@ const ReportsPage = () => {
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        const res = await fetch("http://localhost:8080/report/list", {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/report/list`, {
           method: "GET",
           credentials: "include",
           headers: {
@@ -81,7 +81,7 @@ const ReportsPage = () => {
 
   const handleStatusChange = async (reportId, newStatus) => {
     try {
-      const res = await fetch(`http://localhost:8080/report/updateReportStatus`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/report/updateReportStatus`, {
         method: "POST",
         credentials: "include",
         headers: {

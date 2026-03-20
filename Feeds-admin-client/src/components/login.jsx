@@ -13,7 +13,7 @@ const AdminLoginPage = () => {
   const handleLogin = async (event) => {
     event.preventDefault();
     setMessage(null);
-    const res = await fetch("http://localhost:8080/auth/login", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },

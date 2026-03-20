@@ -25,7 +25,7 @@ const ChannelsPage = () => {
   useEffect(() => {
     const fetchChannels = async () => {
       try {
-        const res = await fetch("http://localhost:8080/channel/list", {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/channel/list`, {
           method: "GET",
           credentials: "include",
           headers: {

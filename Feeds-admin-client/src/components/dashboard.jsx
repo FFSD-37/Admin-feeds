@@ -21,7 +21,7 @@ export default function Dashboard() {
   const MAX_BAR_HEIGHT = 100;
 
   const fetchContentActivity = async () => {
-    const res = await fetch("http://localhost:8080/home/contentActivityToday", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/home/contentActivityToday`, {
       method: "GET",
       credentials: "include",
       headers: {
@@ -37,7 +37,7 @@ export default function Dashboard() {
   }
 
   const fetchReportData = async () => {
-    const res = await fetch("http://localhost:8080/home/reportData", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/home/reportData`, {
       method: "GET",
       credentials: "include",
       headers: {
@@ -53,7 +53,7 @@ export default function Dashboard() {
   };
 
   const fetchReach = async () => {
-    const res = await fetch("http://localhost:8080/home/getReach", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/home/getReach`, {
       method: "GET",
       credentials: "include",
       headers: {
@@ -70,7 +70,7 @@ export default function Dashboard() {
   };
 
   const fetchUsers = async () => {
-    const res = await fetch("http://localhost:8080/home/getUsers", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/home/getUsers`, {
       method: "GET",
       credentials: "include",
       headers: {
@@ -86,7 +86,7 @@ export default function Dashboard() {
   };
 
   const fetchChannels = async () => {
-    const res = await fetch("http://localhost:8080/home/getChannels", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/home/getChannels`, {
       method: "GET",
       credentials: "include",
       headers: {
@@ -102,7 +102,7 @@ export default function Dashboard() {
   };
 
   const fetchRevenue = async () => {
-    const res = await fetch("http://localhost:8080/home/getRevenue", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/home/getRevenue`, {
       method: "GET",
       credentials: "include",
       headers: {
@@ -118,7 +118,7 @@ export default function Dashboard() {
   };
 
   const fetchUserCount = async () => {
-    const res = await fetch("http://localhost:8080/home/getUserCount", {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/home/getUserCount`, {
       method: "GET",
       credentials: "include",
       headers: {

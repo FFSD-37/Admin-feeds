@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
         const checkAuth = async () => {
             try {
                 const res = await axios.get(
-                    "http://localhost:8080/auth/status",
+                    `${import.meta.env.VITE_API_URL}/auth/status`,
                     { withCredentials: true }
                 );
 
