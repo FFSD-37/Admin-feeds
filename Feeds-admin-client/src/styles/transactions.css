@@ -414,3 +414,36 @@
 .periodBtn:hover {
   background-color: #e9eefb;
 }
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .summaryGrid,
+  .paymentList {
+    grid-template-columns: 1fr;
+  }
+
+  .filtersContainer,
+  .filterGroup,
+  .periodButtons,
+  .cardHeader,
+  .cardFooter,
+  .modalRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filterSelect,
+  .filterDate,
+  .statusSelect {
+    width: 100%;
+  }
+
+  .modalLabel {
+    min-width: 0;
+  }
+}

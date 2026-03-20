@@ -117,16 +117,16 @@ const Managers = () => {
                 </div>
 
                 <div className="content-area">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", gap: "1rem", flexWrap: "wrap" }}>
                         <h2 style={{ fontSize: "1.75rem", fontWeight: 700, color: "#1f2937", margin: 0 }}>Managers</h2>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", width: "100%" }}>
                             <input
                                 type="search"
                                 placeholder="Search name, email or type..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #e5e7eb", width: "320px", outline: "none", fontSize: "14px" }}
+                                style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #e5e7eb", width: "min(320px, 100%)", maxWidth: "100%", outline: "none", fontSize: "14px" }}
                             />
                             {searchQuery && (
                                 <button onClick={handleClearSearch} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#6b7280", fontSize: "14px" }}>Clear</button>
@@ -154,7 +154,7 @@ const Managers = () => {
                             <p style={{ marginTop: "1rem", color: "#6b7280", fontSize: "1.125rem" }}>No managers match your search</p>
                         </div>
                     ) : (
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))", gap: "1.5rem" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1.5rem" }}>
                             {filteredManagers.map((m) => (
                                 <div
                                     key={m._id || m.id}
@@ -216,7 +216,7 @@ const Managers = () => {
                                 <div style={{ color: "#6b7280", marginTop: "0.25rem" }}>{selectedManager.email}</div>
                             </div>
 
-                            <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem", alignItems: "center" }}>
+                            <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem", alignItems: "center", flexWrap: "wrap" }}>
                                 <div style={{ minWidth: 140, fontWeight: 600, color: "#6b7280" }}>Manager Type</div>
                                 <select value={managerType} onChange={(e) => setManagerType(e.target.value)} style={{ flex: 1, padding: "0.5rem", borderRadius: 6, border: "1px solid #d1d5db" }}>
                                     <option value="feedback and revenue">feedback and revenue</option>
@@ -232,7 +232,7 @@ const Managers = () => {
                                 <textarea value={actionReason} onChange={(e) => setActionReason(e.target.value)} rows={3} style={{ width: "100%", padding: "0.75rem", borderRadius: 8, border: "1px solid #e5e7eb" }} />
                             </div>
 
-                            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem" }}>
+                            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
                                 <button disabled={actionLoading} onClick={handleUpdateRole} style={{ padding: "0.6rem 1rem", borderRadius: 8, border: "none", backgroundColor: "#4f46e5", color: "#fff", cursor: "pointer" }}>
                                                     Update Type
                                                 </button>

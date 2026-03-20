@@ -298,3 +298,31 @@
   border-radius: 8px;
   border: 1px solid #fbbf24;
 }
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .stats {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .reportList {
+    grid-template-columns: 1fr;
+  }
+
+  .cardHeader,
+  .cardFooter,
+  .modalRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .modalLabel {
+    min-width: 0;
+  }
+}

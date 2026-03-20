@@ -375,6 +375,7 @@ const styles = {
   },
   container: {
     display: "flex",
+    flexWrap: "wrap",
     gap: "2rem",
     backgroundColor: "#fff",
     borderRadius: "12px",
@@ -382,9 +383,11 @@ const styles = {
     boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
   },
   sidebar: {
-    minWidth: "200px",
+    minWidth: "180px",
+    width: "100%",
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: "0.5rem",
   },
   tab: {
@@ -504,6 +507,7 @@ const styles = {
     borderTop: "1px solid #e5e7eb",
     display: "flex",
     justifyContent: "flex-end",
+    flexWrap: "wrap",
   },
   saveButton: {
     display: "flex",

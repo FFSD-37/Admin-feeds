@@ -22,7 +22,7 @@ const ReportsPage = () => {
       padding: "8px 12px",
       borderRadius: "8px",
       border: "1px solid #e5e7eb",
-      width: "320px",
+      width: "min(320px, 100%)",
       outline: "none",
       fontSize: "14px",
     },
@@ -160,7 +160,7 @@ const ReportsPage = () => {
         <div className="content-area">
           <div className="header">
             <h2 className="pageTitle">User Reports</h2>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", width: "100%" }}>
               <input
                 type="search"
                 placeholder="Search report #, post id, user or reason..."

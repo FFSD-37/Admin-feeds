@@ -491,3 +491,67 @@
     min-width: 0;
   }
 }
+
+@media (max-width: 400px) {
+  .channels-title {
+    font-size: 1.35rem;
+  }
+
+  .toolbar-wrap,
+  .category-filter-row {
+    gap: 0.5rem;
+  }
+
+  .responsive-search-input {
+    padding: 0.7rem 0.85rem;
+    font-size: 13px;
+  }
+
+  .category-filter-button {
+    width: 100%;
+    text-align: center;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .channel-card {
+    padding: 1rem;
+  }
+
+  .channel-logo {
+    width: 64px;
+    height: 64px;
+  }
+
+  .channel-name {
+    font-size: 1.05rem;
+  }
+
+  .card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .manage-button {
+    width: 100%;
+  }
+
+  .modal {
+    border-radius: 10px;
+  }
+
+  .modal-header,
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .modal-logo {
+    width: 90px;
+    height: 90px;
+  }
+
+  .modal-title {
+    font-size: 1.2rem;
+  }
+}

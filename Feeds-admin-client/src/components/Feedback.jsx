@@ -62,12 +62,11 @@ const FeedbacksPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const searchStyles = {
-    container: { display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '1rem' },
     input: {
       padding: '8px 12px',
       borderRadius: '8px',
       border: '1px solid #e5e7eb',
-      width: '320px',
+      width: 'min(320px, 100%)',
       outline: 'none',
       fontSize: '14px',
     },
@@ -116,7 +115,7 @@ const FeedbacksPage = () => {
         <div className="content-area">
           <div style={styles.header}>
             <h2 style={styles.pageTitle}>User Feedbacks</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={styles.toolbar}>
               <input
                 type="search"
                 placeholder="Search name, email, subject or message..."
@@ -273,6 +272,16 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '2rem',
+    gap: '1rem',
+    flexWrap: 'wrap',
+  },
+  toolbar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap',
+    width: '100%',
+    justifyContent: 'flex-end',
   },
   pageTitle: {
     fontSize: '1.75rem',
@@ -308,7 +317,7 @@ const styles = {
   },
   feedbackList: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
     gap: '1.5rem',
   },
   feedbackCard: {
@@ -435,7 +444,7 @@ const styles = {
     backgroundColor: '#fff',
     borderRadius: '12px',
     maxWidth: '600px',
-    width: '90%',
+    width: 'min(92%, 700px)',
     maxHeight: '80vh',
     overflow: 'auto',
     boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
@@ -470,6 +479,7 @@ const styles = {
     gap: '1rem',
     marginBottom: '1rem',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   modalLabel: {
     fontSize: '0.875rem',
