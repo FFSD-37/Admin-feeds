@@ -671,3 +671,45 @@
     width: 100%;
   }
 }
+
+@media (max-width: 640px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-card {
+    padding: 1rem;
+  }
+
+  .user-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-footer,
+  .modal-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .manage-button {
+    width: 100%;
+  }
+
+  .modal {
+    max-height: 92vh;
+  }
+
+  .modal-header,
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .modal-label {
+    min-width: 0;
+  }
+
+  .modal-avatar {
+    width: 84px;
+    height: 84px;
+  }
+}

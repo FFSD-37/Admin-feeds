@@ -13,6 +13,7 @@ import { reports } from "./routes/reports.js";
 import { payment } from "./routes/payments.js";
 import { channel } from "./routes/channels.js";
 import { manager } from "./routes/managers.js";
+import { posts } from "./routes/posts.js";
 import { connectDB } from "./DB/Connection.js";
 import { setting } from "./routes/settings.js";
 import { adminLogger } from "./middlewares/adminLogger.js";
@@ -53,6 +54,7 @@ app.use("/feedback", feedback);
 app.use("/report", reports);
 app.use("/payment", payment);
 app.use("/channel", channel);
+app.use("/post", posts);
 app.use("/setting", setting);
 app.use("/manager", manager);
 
