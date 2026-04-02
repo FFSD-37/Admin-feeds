@@ -1,5 +1,6 @@
 import express from "express";
 import { buildSchema, graphql, GraphQLError } from "graphql";
+import { graphqlHTTP } from "express-graphql";
 import Admin from "../models/admin.js";
 import ManagerAction from "../models/managerAction.js";
 
@@ -411,6 +412,15 @@ const executeManagerGraphQL = async (source, variableValues) => {
 
   return result.data;
 };
+
+manager.use(
+  "/graphql",
+  graphqlHTTP({
+    schema: managerSchema,
+    rootValue: managerResolvers,
+    graphiql: process.env.NODE_ENV !== "production",
+  })
+);
 
 manager.get("/list", async (req, res, next) => {
   try {
