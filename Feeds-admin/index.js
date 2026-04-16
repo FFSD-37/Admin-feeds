@@ -22,45 +22,54 @@ import auth from "./routes/auth.js";
 
 dotenv.config();
 
-const app = express();
+export const createApp = () => {
+  const app = express();
 
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  })
-);
-app.use(express.json());
-app.use(cookieParser());
-app.use(bodyParser.urlencoded({ extended: true }));
+  app.use(
+    cors({
+      origin: true,
+      credentials: true,
+    })
+  );
+  app.use(express.json());
+  app.use(cookieParser());
+  app.use(bodyParser.urlencoded({ extended: true }));
 
-connectDB();
-setupSwagger(app);
+  if (process.env.NODE_ENV !== "test") {
+    connectDB();
+    setupSwagger(app);
+    app.use(adminLogger);
+  }
 
-app.use(adminLogger);
-
-app.get("/healthCheck", (req, res) => {
-  return res.json({
-    success: true,
-    msg: "admin server is healthy",
+  app.get("/healthCheck", (req, res) => {
+    return res.json({
+      success: true,
+      msg: "admin server is healthy",
+    });
   });
-});
 
-app.use("/auth", auth);
-app.use(requireAdminAuth);
-app.use("/home", home);
-app.use("/user", user);
-app.use("/feedback", feedback);
-app.use("/report", reports);
-app.use("/payment", payment);
-app.use("/channel", channel);
-app.use("/post", posts);
-app.use("/setting", setting);
-app.use("/manager", manager);
+  app.use("/auth", auth);
+  app.use(requireAdminAuth);
+  app.use("/home", home);
+  app.use("/user", user);
+  app.use("/feedback", feedback);
+  app.use("/report", reports);
+  app.use("/payment", payment);
+  app.use("/channel", channel);
+  app.use("/post", posts);
+  app.use("/setting", setting);
+  app.use("/manager", manager);
 
-app.use(ErrorHandler);
+  app.use(ErrorHandler);
 
-const PORT = process.env.PORT;
-app.listen(PORT, () => {
-  console.log(`Admin at service at: http://localhost:${PORT}`);
-});
+  return app;
+};
+
+export const app = createApp();
+
+if (process.env.NODE_ENV !== "test") {
+  const PORT = process.env.PORT;
+  app.listen(PORT, () => {
+    console.log(`Admin at service at: http://localhost:${PORT}`);
+  });
+}
